@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고대 철학 아카데미 — 학파 배정 시험</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sophist:   #E8800A;
+  --socrates:  #2563EB;
+  --confucian: #16A34A;
+  --daoist:    #7C3AED;
+  --bg:        #0F0E17;
+  --surface:   #1A1927;
+  --surface2:  #242236;
+  --text:      #FFFFFE;
+  --muted:     #A7A9BE;
+  --radius:    12px;
+  --ease:      0.25s ease;
+}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 56px;
+}
+
+/* ── 화면 전환 ── */
+.screen {
+  display: none;
+  width: 100%;
+  max-width: 520px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.screen.active { display: flex; flex-direction: column; opacity: 1; }
+
+/* ── 버튼 ── */
+.btn {
+  border: none; border-radius: 10px; cursor: pointer;
+  font-size: 1rem; font-weight: 700;
+  min-height: 52px; padding: 14px 20px;
+  transition: opacity var(--ease), transform var(--ease);
+  width: 100%;
+}
+.btn:active  { transform: scale(0.97); opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary  { background: linear-gradient(135deg,#5B4FCF,#7C6FD6); color:#fff; }
+.btn-secondary{ background: var(--surface2); color: var(--text); border:1px solid #3A3850; }
+.btn-ghost    { background: transparent; color: var(--muted); border:1px solid #3A3850; font-weight:400; }
+.btn-outline-school {
+  background: transparent; border: 2px solid currentColor;
+  font-weight: 700; border-radius: 10px;
+}
+
+/* ── 시작 화면 ── */
+#screen-start { padding-top: 48px; gap: 24px; }
+
+.academy-title { text-align: center; }
+.academy-title h1 { font-size:1.6rem; font-weight:800; letter-spacing:-0.5px; line-height:1.3; }
+.academy-title .subtitle { color:var(--muted); font-size:0.9rem; margin-top:6px; }
+
+.intro-text {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 20px; font-size: 0.95rem; line-height: 1.8;
+  color: #D4D3E8; border-left: 3px solid #5B4FCF;
+}
+.intro-text em { font-style:normal; color:#C4B5FD; }
+
+.schools-preview { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.school-chip {
+  border-radius:10px; padding:14px 16px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.school-chip .chip-name       { font-size:0.88rem; font-weight:700; }
+.school-chip .chip-philosopher { font-size:0.74rem; opacity:0.8; }
+.school-chip .chip-motto       { font-size:0.72rem; opacity:0.6; font-style:italic; }
+.school-chip[data-school="sophist"]  { background:#3A1F04; border:1px solid var(--sophist);   color:#FED7AA; }
+.school-chip[data-school="socrates"] { background:#071D4A; border:1px solid var(--socrates);  color:#BFDBFE; }
+.school-chip[data-school="confucian"]{ background:#052E16; border:1px solid var(--confucian); color:#BBF7D0; }
+.school-chip[data-school="daoist"]   { background:#2E1065; border:1px solid var(--daoist);    color:#DDD6FE; }
+
+.form-group { display:flex; flex-direction:column; gap:8px; }
+.form-group label { font-size:0.875rem; color:var(--muted); }
+.form-group select,
+.form-group input {
+  background:var(--surface2); border:1px solid #3A3850; border-radius:8px;
+  color:var(--text); font-size:1rem; padding:12px 14px;
+  min-height:44px; width:100%; outline:none;
+  transition: border-color var(--ease);
+}
+.form-group select:focus,
+.form-group input:focus { border-color:#7C6FD6; }
+.form-group select option { background:#1A1927; }
+
+.meta-info {
+  display:flex; gap:16px; font-size:0.82rem;
+  color:var(--muted); justify-content:center;
+}
+.meta-info span::before { content:"• "; }
+
+.prev-result-banner {
+  background:var(--surface); border:1px solid #3A3850;
+  border-radius:var(--radius); padding:14px 16px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.prev-result-banner .label       { font-size:0.82rem; color:var(--muted); }
+.prev-result-banner .school-name { font-size:1rem; font-weight:700; }
+
+/* ── 문항 화면 ── */
+#screen-question { padding-top:32px; gap:24px; }
+
+.progress-bar-wrap { display:flex; flex-direction:column; gap:6px; }
+.progress-label { display:flex; justify-content:space-between; font-size:0.82rem; color:var(--muted); }
+.progress-track { background:var(--surface2); border-radius:99px; height:6px; overflow:hidden; }
+.progress-fill  {
+  background:linear-gradient(90deg,#5B4FCF,#7C6FD6);
+  height:100%; border-radius:99px; transition:width 0.4s ease;
+}
+
+.question-card { background:var(--surface); border-radius:var(--radius); padding:24px 20px; }
+.question-number {
+  font-size:0.78rem; color:#7C6FD6; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;
+}
+.question-text { font-size:1.05rem; font-weight:600; line-height:1.65; }
+
+.options-list { display:flex; flex-direction:column; gap:10px; }
+.option-btn {
+  background:var(--surface2); border:2px solid transparent;
+  border-radius:10px; color:var(--text); cursor:pointer;
+  font-size:0.95rem; line-height:1.5; min-height:52px;
+  padding:14px 16px; text-align:left;
+  transition:border-color var(--ease), background var(--ease), transform 0.1s;
+  width:100%;
+}
+.option-btn:hover    { border-color:#5B4FCF; background:#2A2840; }
+.option-btn:active   { transform:scale(0.98); }
+.option-btn.selected { border-color:#7C6FD6; background:#2A2840; }
+
+.nav-row { display:flex; gap:10px; }
+
+/* ── 연출 화면 ── */
+#screen-reveal {
+  padding-top:0; min-height:100vh;
+  align-items:center; justify-content:center;
+  gap:32px;
+}
+.reveal-wrap {
+  display:flex; flex-direction:column;
+  align-items:center; gap:32px; padding:40px 20px;
+}
+.reveal-phrase {
+  font-size:1rem; color:var(--muted); text-align:center;
+  letter-spacing:0.3px; line-height:1.7;
+  animation: fadePulse 1.4s ease-in-out infinite;
+}
+@keyframes fadePulse {
+  0%,100% { opacity:0.5; }
+  50%      { opacity:1; }
+}
+.reveal-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px; width:240px;
+}
+.reveal-card {
+  border-radius:14px; padding:16px 12px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  animation: cardPulse 1.2s ease-in-out infinite;
+  transition: transform 0.5s ease, opacity 0.5s ease, box-shadow 0.5s ease;
+  border: 2px solid transparent;
+}
+.reveal-card[data-school="sophist"]  { background:#3A1F04; border-color:var(--sophist);   animation-delay:0s; }
+.reveal-card[data-school="socrates"] { background:#071D4A; border-color:var(--socrates);  animation-delay:0.3s; }
+.reveal-card[data-school="confucian"]{ background:#052E16; border-color:var(--confucian); animation-delay:0.6s; }
+.reveal-card[data-school="daoist"]   { background:#2E1065; border-color:var(--daoist);    animation-delay:0.9s; }
+.reveal-card .reveal-emblem-icon { width:40px; height:40px; }
+.reveal-card .reveal-name { font-size:0.78rem; font-weight:700; text-align:center; }
+.reveal-card[data-school="sophist"]  .reveal-name { color:#FED7AA; }
+.reveal-card[data-school="socrates"] .reveal-name { color:#BFDBFE; }
+.reveal-card[data-school="confucian"].reveal-name { color:#BBF7D0; }
+.reveal-card[data-school="daoist"]   .reveal-name { color:#DDD6FE; }
+@keyframes cardPulse {
+  0%,100% { transform:scale(0.97); opacity:0.6; }
+  50%      { transform:scale(1.03); opacity:1; }
+}
+.reveal-card.winner {
+  animation: none;
+  transform: scale(1.12);
+  opacity: 1;
+  box-shadow: 0 0 28px 6px rgba(255,255,255,0.15);
+}
+.reveal-card.loser { animation:none; opacity:0.15; transform:scale(0.9); }
+.reveal-sub {
+  font-size:0.95rem; font-weight:700; color:var(--text);
+  text-align:center; opacity:0;
+  transition:opacity 0.5s ease;
+}
+.reveal-sub.visible { opacity:1; }
+
+/* ── 결과 화면 ── */
+#screen-result { padding-top:32px; gap:20px; }
+
+.result-header {
+  border-radius:16px; padding:32px 20px 24px;
+  text-align:center; display:flex;
+  flex-direction:column; align-items:center; gap:12px;
+  position:relative; overflow:hidden;
+}
+.result-header::before {
+  content:''; position:absolute;
+  inset:0; opacity:0.12;
+  background:radial-gradient(circle at 50% 0%,#fff 0%,transparent 70%);
+  pointer-events:none;
+}
+.result-header[data-school="sophist"]  { background:linear-gradient(160deg,#3A1F04,#5A2E06); border:2px solid var(--sophist);   }
+.result-header[data-school="socrates"] { background:linear-gradient(160deg,#071D4A,#0D2D6E); border:2px solid var(--socrates);  }
+.result-header[data-school="confucian"]{ background:linear-gradient(160deg,#052E16,#064E28); border:2px solid var(--confucian); }
+.result-header[data-school="daoist"]   { background:linear-gradient(160deg,#2E1065,#4A1A99); border:2px solid var(--daoist);    }
+
+.result-emblem-svg { width:72px; height:72px; }
+.result-declaration-top { font-size:0.82rem; opacity:0.7; letter-spacing:0.5px; }
+.result-school-title { font-size:2rem; font-weight:900; letter-spacing:-0.5px; line-height:1.2; }
+.result-motto-text { font-size:0.88rem; opacity:0.8; font-style:italic; }
+.result-lineage {
+  font-size:0.78rem; opacity:0.65; line-height:1.6;
+  background:rgba(0,0,0,0.2); border-radius:8px;
+  padding:8px 14px; max-width:380px;
+}
+
+.borderline-note {
+  background:#2A2840; border-left:3px solid #7C6FD6;
+  border-radius:8px; font-size:0.85rem;
+  padding:12px 16px; color:#C4B5FD;
+  display:none; line-height:1.6;
+}
+.borderline-note.visible { display:block; }
+
+.description-card {
+  background:var(--surface); border-radius:var(--radius);
+  padding:22px 20px; display:flex; flex-direction:column; gap:14px;
+}
+.description-card p { font-size:0.9rem; line-height:1.8; color:#D4D3E8; }
+.description-card p:first-child { color:var(--text); }
+
+.card-section {
+  background:var(--surface); border-radius:var(--radius); padding:20px;
+}
+.card-section-title {
+  font-size:0.78rem; font-weight:700; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase; margin-bottom:14px;
+}
+
+/* 4분면 차트 */
+.quadrant-wrap { display:flex; justify-content:center; }
+#quadrant-svg { max-width:260px; width:100%; }
+
+/* 축 점수 바 */
+.score-row { display:flex; flex-direction:column; gap:6px; }
+.score-labels { display:flex; justify-content:space-between; font-size:0.74rem; color:var(--muted); }
+.score-bar-track { background:var(--surface2); border-radius:99px; height:10px; position:relative; overflow:hidden; }
+.score-bar-fill  { position:absolute; top:0; height:100%; border-radius:99px; }
+.score-value     { font-size:0.8rem; color:var(--muted); text-align:center; }
+.scores-inner    { display:flex; flex-direction:column; gap:14px; }
+
+/* 궁합 카드 */
+.affinity-inner { display:flex; flex-direction:column; gap:10px; }
+.affinity-row   { display:flex; align-items:flex-start; gap:12px; }
+.affinity-label { font-size:0.78rem; color:var(--muted); min-width:80px; padding-top:2px; }
+.affinity-val   { font-size:0.88rem; line-height:1.6; }
+.affinity-val strong { font-weight:700; }
+
+/* 공유 */
+.share-row { display:flex; gap:10px; }
+.share-row .btn { flex:1; font-size:0.9rem; min-height:48px; }
+
+.result-code-section { text-align:center; }
+.result-code-label { font-size:0.75rem; color:var(--muted); margin-bottom:6px; }
+.result-code-box {
+  background:var(--surface2); border-radius:8px; padding:10px 14px;
+  font-family:monospace; font-size:1rem; letter-spacing:3px;
+  color:#A5B4FC; border:1px solid #3A3850; display:inline-block;
+}
+
+.restart-note { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:-8px; }
+
+/* 토스트 */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+  background:#2A2840; border:1px solid #5B4FCF; border-radius:10px;
+  padding:12px 20px; font-size:0.88rem; color:var(--text);
+  transition:transform 0.35s ease, opacity 0.35s ease;
+  opacity:0; pointer-events:none; white-space:nowrap; z-index:999;
+}
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* ── 교사 대시보드 ── */
+#screen-teacher { max-width:900px; padding-top:32px; gap:20px; }
+
+.teacher-login-wrap {
+  min-height:50vh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:20px; padding:40px 20px;
+}
+.teacher-login-wrap h2 { font-size:1.6rem; font-weight:900; text-align:center; }
+.teacher-login-wrap p  { color:var(--muted); text-align:center; font-size:0.9rem; }
+.t-login-form { display:flex; gap:10px; width:100%; max-width:360px; }
+.t-login-form input {
+  flex:1; background:var(--surface2); border:1px solid #3A3850;
+  border-radius:8px; color:var(--text); font-size:1rem;
+  padding:12px 14px; min-height:44px; outline:none;
+}
+.t-login-form input:focus { border-color:#7C6FD6; }
+.teacher-section { background:var(--surface); border-radius:var(--radius); padding:22px; }
+.teacher-section-title {
+  font-size:0.75rem; font-weight:700; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase; margin-bottom:16px;
+}
+.t-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.t-counter-num { font-size:3.5rem; font-weight:900; line-height:1; transition:transform 0.2s ease; }
+.t-counter-num.bump { transform:scale(1.12); }
+.t-counter-sub { font-size:0.9rem; color:var(--muted); }
+.t-gauge-list { display:flex; flex-direction:column; gap:12px; }
+.t-gauge-row  { display:flex; align-items:center; gap:10px; }
+.t-gauge-label { font-size:0.85rem; font-weight:700; min-width:92px; }
+.t-gauge-track { flex:1; background:var(--surface2); border-radius:99px; height:36px; overflow:hidden; }
+.t-gauge-fill  {
+  height:100%; border-radius:99px; display:flex; align-items:center; padding:0 12px;
+  transition:width 0.7s cubic-bezier(0.34,1.56,0.64,1);
+}
+.t-gauge-count { font-size:1.05rem; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.4); }
+.t-gauge-pct   { font-size:0.8rem; color:var(--muted); min-width:36px; text-align:right; }
+.t-scatter-wrap { display:flex; justify-content:center; }
+#t-scatter { max-width:380px; width:100%; }
+.t-prompt {
+  background:var(--surface2); border-radius:10px; padding:16px 18px;
+  border-left:4px solid #7C6FD6; font-size:0.95rem; line-height:1.75;
+}
+.t-code-area {
+  background:var(--surface2); border:1px solid #3A3850; border-radius:8px;
+  color:var(--text); font-family:monospace; font-size:0.88rem;
+  padding:12px 14px; width:100%; min-height:80px; resize:vertical;
+  outline:none; line-height:1.6;
+}
+.t-code-area:focus { border-color:#7C6FD6; }
+.t-btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.t-btn-row .btn { width:auto; flex:1; min-width:120px; font-size:0.9rem; min-height:44px; }
+.t-class-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.t-class-row label { font-size:0.875rem; color:var(--muted); white-space:nowrap; }
+.t-class-row select {
+  background:var(--surface2); border:1px solid #3A3850; border-radius:8px;
+  color:var(--text); font-size:1rem; padding:10px 14px; min-height:44px; outline:none;
+}
+.t-code-result { font-size:0.82rem; margin-top:8px; }
+.t-code-result .ok   { color:#BBF7D0; }
+.t-code-result .warn { color:#FED7AA; }
+.offline-fallback {
+  background:#2A1F04; border:2px solid var(--sophist); border-radius:10px;
+  padding:14px 16px; flex-direction:column; gap:6px; display:none;
+}
+.offline-fallback.visible { display:flex; }
+.offline-fallback .of-title { font-size:0.82rem; font-weight:700; color:#FED7AA; }
+.offline-fallback .of-body  { font-size:0.85rem; color:#D4D3E8; line-height:1.6; }
+@media (min-width:768px) {
+  .t-counter-num { font-size:4.5rem; }
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .screen { transition:none; }
+  .reveal-phrase, .reveal-card, @keyframes cardPulse { animation:none; }
+  .reveal-card { opacity:1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ 시작 화면 ══════════════ -->
+<section id="screen-start" class="screen active">
+  <div class="academy-title">
+    <h1>고대 철학 아카데미<br>학파 배정 시험</h1>
+    <p class="subtitle">나는 어떤 철학자의 후예인가?</p>
+  </div>
+
+  <div class="intro-text">
+    고대 철학 아카데미에 오신 것을 환영합니다.<br>
+    이 아카데미에는 <em>네 개의 위대한 학파</em>가 있으며,
+    각 학파는 세상을 보는 방식, 진리를 대하는 태도,
+    삶을 살아가는 방향이 저마다 다릅니다.<br>
+    지금부터 10개의 질문을 통해 <em>그대가 속할 학파</em>를 찾아드리겠습니다.
+  </div>
+
+  <div class="schools-preview">
+    <div class="school-chip" data-school="sophist">
+      <span class="chip-name">소피스트 학파</span>
+      <span class="chip-philosopher">프로타고라스 · 고르기아스</span>
+      <span class="chip-motto">현실을 꿰뚫어라</span>
+    </div>
+    <div class="school-chip" data-school="socrates">
+      <span class="chip-name">소크라테스 학파</span>
+      <span class="chip-philosopher">소크라테스 · 플라톤 · 아리스토텔레스</span>
+      <span class="chip-motto">캐물어라, 앎에 이를 때까지</span>
+    </div>
+    <div class="school-chip" data-school="confucian">
+      <span class="chip-name">유가 학파</span>
+      <span class="chip-philosopher">공자 · 맹자 · 순자</span>
+      <span class="chip-motto">배움으로 사람을 이루어라</span>
+    </div>
+    <div class="school-chip" data-school="daoist">
+      <span class="chip-name">도가 학파</span>
+      <span class="chip-philosopher">노자 · 장자</span>
+      <span class="chip-motto">물처럼 흐르라</span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="class-select">학급 선택</label>
+    <select id="class-select">
+      <option value="">-- 학급을 선택하세요 --</option>
+      <option value="1">1반</option><option value="2">2반</option>
+      <option value="3">3반</option><option value="4">4반</option>
+      <option value="5">5반</option><option value="6">6반</option>
+      <option value="7">7반</option><option value="8">8반</option>
+      <option value="9">9반</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="name-input">이름 <span style="color:var(--muted)">(선택 — 결과 화면에만 표시)</span></label>
+    <input type="text" id="name-input" placeholder="홍길동" maxlength="20" autocomplete="off">
+  </div>
+
+  <div class="meta-info">
+    <span>문항 10개</span><span>약 3~4분</span><span>뒤로가기 가능</span>
+  </div>
+
+  <div id="prev-result-section" class="prev-result-banner" style="display:none">
+    <div>
+      <div class="label">지난 배정 결과</div>
+      <div class="school-name" id="prev-school-name"></div>
+    </div>
+    <button class="btn btn-ghost" id="prev-result-btn"
+      style="width:auto;padding:10px 16px;min-height:44px;font-size:0.88rem">결과 보기</button>
+  </div>
+
+  <button class="btn btn-primary" id="start-btn" disabled>입학 시험 시작</button>
+</section>
+
+<!-- ══════════════ 문항 화면 ══════════════ -->
+<section id="screen-question" class="screen">
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>진행률</span>
+      <span id="progress-text">1 / 10</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:10%"></div>
+    </div>
+  </div>
+
+  <div class="question-card">
+    <div class="question-number" id="question-number">Q. 1</div>
+    <div class="question-text" id="question-text"></div>
+  </div>
+
+  <div class="options-list" id="options-list"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-ghost" id="prev-btn"
+      style="width:auto;flex:0 0 auto;padding:14px 24px">← 이전</button>
+    <div style="flex:1"></div>
+  </div>
+</section>
+
+<!-- ══════════════ 연출 화면 ══════════════ -->
+<section id="screen-reveal" class="screen">
+  <div class="reveal-wrap">
+    <p class="reveal-phrase" id="reveal-phrase">지혜의 두루마리가 그대를 살피고 있다…</p>
+    <div class="reveal-grid" id="reveal-grid">
+      <div class="reveal-card" data-school="sophist">
+        <div class="reveal-emblem-icon" id="ri-sophist"></div>
+        <span class="reveal-name">소피스트</span>
+      </div>
+      <div class="reveal-card" data-school="socrates">
+        <div class="reveal-emblem-icon" id="ri-socrates"></div>
+        <span class="reveal-name">소크라테스</span>
+      </div>
+      <div class="reveal-card" data-school="confucian">
+        <div class="reveal-emblem-icon" id="ri-confucian"></div>
+        <span class="reveal-name">유가</span>
+      </div>
+      <div class="reveal-card" data-school="daoist">
+        <div class="reveal-emblem-icon" id="ri-daoist"></div>
+        <span class="reveal-name">도가</span>
+      </div>
+    </div>
+    <p class="reveal-sub" id="reveal-sub"></p>
+  </div>
+</section>
+
+<!-- ══════════════ 결과 화면 ══════════════ -->
+<section id="screen-result" class="screen">
+
+  <div class="result-header" id="result-header" data-school="">
+    <div class="result-emblem-svg" id="result-emblem-svg"></div>
+    <div class="result-declaration-top" id="result-declaration-top">그대는…</div>
+    <div class="result-school-title" id="result-school-title"></div>
+    <div class="result-motto-text" id="result-motto-text"></div>
+    <div class="result-lineage" id="result-lineage"></div>
+  </div>
+
+  <div class="borderline-note" id="borderline-note">
+    ✦ 두 학파의 기질을 모두 지닌 자 — 어느 쪽으로도 기울 수 있는 희귀한 성향입니다.
+    근소한 우세로 배정되었으나, 그대는 경계 위에 서 있습니다.
+  </div>
+
+  <div class="description-card" id="description-card"></div>
+
+  <!-- 4분면 좌표 -->
+  <div class="card-section">
+    <div class="card-section-title">나의 철학 좌표</div>
+    <div class="quadrant-wrap">
+      <svg id="quadrant-svg" viewBox="0 0 260 260" fill="none"
+           role="img" aria-label="4분면 철학 좌표 차트"></svg>
+    </div>
+  </div>
+
+  <!-- 축 점수 -->
+  <div class="card-section">
+    <div class="card-section-title">성향 축 점수</div>
+    <div class="scores-inner">
+      <div class="score-row">
+        <div class="score-labels">
+          <span>← 진리는 상대적 (소피스트·도가)</span>
+          <span>참된 앎이 존재 (소크라테스·유가) →</span>
+        </div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" id="truth-bar"></div>
+        </div>
+        <div class="score-value" id="truth-value"></div>
+      </div>
+      <div class="score-row">
+        <div class="score-labels">
+          <span>← 내면·자연을 따라 (소크라테스·도가)</span>
+          <span>사회 속에서 적극적 (유가·소피스트) →</span>
+        </div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" id="life-bar"></div>
+        </div>
+        <div class="score-value" id="life-value"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 궁합 -->
+  <div class="card-section">
+    <div class="card-section-title">학파 궁합</div>
+    <div class="affinity-inner" id="affinity-inner"></div>
+  </div>
+
+  <!-- 공유 -->
+  <div class="share-row">
+    <button class="btn btn-secondary" id="btn-save">이미지 저장</button>
+    <button class="btn btn-secondary" id="btn-copy">결과 복사</button>
+  </div>
+
+  <div class="result-code-section">
+    <div class="result-code-label">결과 코드 (오프라인 폴백용)</div>
+    <div class="result-code-box" id="result-code"></div>
+  </div>
+
+  <div class="offline-fallback" id="offline-fallback">
+    <div class="of-title">📡 제출 실패 — 오프라인 모드</div>
+    <div class="of-body">
+      서버에 결과를 전송하지 못했습니다. 아래 <strong>결과 코드</strong>를 선생님께 알려주세요.
+      선생님 대시보드의 "코드 수동 입력" 창에 붙여넣으면 합산됩니다.
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="restart-btn">↺ 다시 하기</button>
+  <p class="restart-note">재검사 결과는 기록에 별도 제출되지 않습니다.</p>
+</section>
+
+<!-- ══════════════ 교사 대시보드 (?mode=teacher) ══════════════ -->
+<section id="screen-teacher" class="screen">
+
+  <!-- 로그인 -->
+  <div class="teacher-login-wrap" id="t-login-wrap">
+    <h2>교사 대시보드</h2>
+    <p>수업 중 학파 배정 현황을 실시간으로 확인합니다.<br>
+       교사 전용 암호를 입력해 입장하세요.</p>
+    <div class="t-login-form">
+      <input type="password" id="t-password" placeholder="암호 입력"
+             autocomplete="current-password" aria-label="교사 암호">
+      <button class="btn btn-primary" id="t-login-btn"
+        style="width:auto;padding:12px 20px;min-height:44px">입장</button>
+    </div>
+    <p id="t-login-err" style="color:#FCA5A5;display:none" role="alert">암호가 맞지 않습니다.</p>
+  </div>
+
+  <!-- 대시보드 본체 -->
+  <div id="t-dashboard" style="display:none;flex-direction:column;gap:20px;">
+
+    <!-- 카운터 + 학급 선택 -->
+    <div class="teacher-section">
+      <div class="t-header">
+        <div>
+          <div class="t-counter-num" id="t-count-num" aria-live="polite">0</div>
+          <div class="t-counter-sub">명 배정 완료</div>
+        </div>
+        <div class="t-class-row">
+          <label for="t-class-select">학급 필터</label>
+          <select id="t-class-select" aria-label="학급 선택">
+            <option value="">전체 학급</option>
+            <option value="1">1반</option><option value="2">2반</option>
+            <option value="3">3반</option><option value="4">4반</option>
+            <option value="5">5반</option><option value="6">6반</option>
+            <option value="7">7반</option><option value="8">8반</option>
+            <option value="9">9반</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학파 배정 게이지 -->
+    <div class="teacher-section">
+      <div class="teacher-section-title">학파 배정 현황</div>
+      <div class="t-gauge-list" id="t-gauges" aria-live="polite"></div>
+    </div>
+
+    <!-- 4분면 산점도 -->
+    <div class="teacher-section">
+      <div class="teacher-section-title">4분면 좌표 분포 &nbsp;
+        <span style="font-weight:400;font-size:0.78rem;color:var(--muted)">● 학생 &nbsp; ◯ 학급 평균</span>
+      </div>
+      <div class="t-scatter-wrap">
+        <svg id="t-scatter" viewBox="0 0 380 380" fill="none"
+             role="img" aria-label="학급 전체 철학 좌표 산점도"></svg>
+      </div>
+    </div>
+
+    <!-- 토론 유도 문구 -->
+    <div class="teacher-section">
+      <div class="teacher-section-title">수업 활용 토론 유도 문구</div>
+      <div class="t-prompt" id="t-prompt" aria-live="polite">
+        학생들의 배정 결과를 기다리고 있습니다…
+      </div>
+    </div>
+
+    <!-- 결과 코드 수동 입력 -->
+    <div class="teacher-section">
+      <div class="teacher-section-title">결과 코드 수동 입력 (오프라인 폴백)</div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;line-height:1.6">
+        학생이 알려준 결과 코드를 줄바꿈 또는 쉼표로 구분해 붙여넣고 [합산]을 누르세요.<br>
+        잘못된 코드는 건너뛰며, 파싱 결과를 알림으로 표시합니다.
+      </p>
+      <textarea class="t-code-area" id="t-code-input"
+        placeholder="SO+8-6&#10;DA-6-8&#10;CO+6+8, SP-8+6"
+        aria-label="결과 코드 입력"></textarea>
+      <div class="t-btn-row">
+        <button class="btn btn-secondary" id="t-parse-btn">합산</button>
+        <button class="btn btn-secondary" id="t-csv-btn">CSV 내보내기</button>
+        <button class="btn btn-ghost" id="t-clear-manual-btn">수동 데이터 초기화</button>
+      </div>
+      <div class="t-code-result" id="t-code-result" role="status"></div>
+    </div>
+
+  </div><!-- /t-dashboard -->
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   ▼▼▼  교사 설정 구역 — 이 두 곳만 채우면 됩니다  ▼▼▼
+════════════════════════════════════════════════════════════
+
+   1. Firebase 콘솔 → 프로젝트 설정 → 앱 → SDK 설정에서
+      firebaseConfig 객체를 복사해 아래에 붙여넣으세요.
+      apiKey가 비어있으면 Firebase 기능이 자동으로 비활성화되고
+      오프라인 데모 모드로 동작합니다 (학생 플로우 정상 동작).
+
+   2. TEACHER_PASSWORD를 원하는 암호로 바꾸세요.
+
+════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCHRZRJ0udNn412kY8_yhr6UwLdVlexABQ",
+  authDomain:        "p-bti-b4e49.firebaseapp.com",
+  projectId:         "p-bti-b4e49",
+  storageBucket:     "p-bti-b4e49.firebasestorage.app",
+  messagingSenderId: "772653970483",
+  appId:             "1:772653970483:web:6a6094587ed890706f5f46",
+};
+
+const TEACHER_PASSWORD = "phil2025"; /* ← 원하는 암호로 변경 */
+/* ▲▲▲  설정 끝  ▲▲▲ */
+
+/* ── Firebase 런타임 상태 ── */
+let _db = null;
+let _fbFns = null;
+const LS_SUBMITTED = 'phil_academy_submitted';
+
+function isFirebaseReady() {
+  return Boolean(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+}
+
+async function initFirebase() {
+  if (_db) return _db;
+  if (!isFirebaseReady()) return null;
+  try {
+    const { initializeApp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const fbfs =
+      await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    const app = initializeApp(FIREBASE_CONFIG);
+    _db = fbfs.getFirestore(app);
+    _fbFns = fbfs;
+    return _db;
+  } catch(e) {
+    console.warn('[Firebase] 초기화 실패:', e.message);
+    return null;
+  }
+}
+
+async function submitToFirestore(school, scores, classId) {
+  if (localStorage.getItem(LS_SUBMITTED)) return; // 중복 방지
+  const database = await initFirebase();
+  if (!database) { showOfflineFallback(); return; }
+  try {
+    const { collection, addDoc, serverTimestamp } = _fbFns;
+    await addDoc(collection(database, 'submissions'), {
+      classId: classId || 'unknown',
+      school,
+      truth: scores.truth,
+      life:  scores.life,
+      createdAt: serverTimestamp(),
+    });
+    localStorage.setItem(LS_SUBMITTED, '1');
+  } catch(e) {
+    console.warn('[Firebase] 제출 실패:', e.message);
+    showOfflineFallback();
+  }
+}
+
+function showOfflineFallback() {
+  const el = document.getElementById('offline-fallback');
+  if (el) el.classList.add('visible');
+}
+
+/* ════════════════════════════════════════
+   1. 데이터 구조 (Stage 1 그대로)
+════════════════════════════════════════ */
+const SCHOOLS = {
+  sophist: {
+    id:'sophist', name:'소피스트 학파',
+    philosophers:'프로타고라스, 고르기아스',
+    color:'#E8800A', motto:'현실을 꿰뚫어라',
+    keywords:['상대주의','실용성','설득','현실 감각','유연함'], abbr:'SP',
+  },
+  socrates: {
+    id:'socrates', name:'소크라테스 학파',
+    philosophers:'소크라테스, 플라톤, 아리스토텔레스',
+    color:'#2563EB', motto:'캐물어라, 앎에 이를 때까지',
+    keywords:['진리 탐구','질문','이성','논증','앎'], abbr:'SO',
+  },
+  confucian: {
+    id:'confucian', name:'유가 학파',
+    philosophers:'공자, 맹자, 순자',
+    color:'#16A34A', motto:'배움으로 사람을 이루어라',
+    keywords:['배움','예의','관계','사회적 책임','공동체'], abbr:'CO',
+  },
+  daoist: {
+    id:'daoist', name:'도가 학파',
+    philosophers:'노자, 장자',
+    color:'#7C3AED', motto:'물처럼 흐르라',
+    keywords:['자연스러움','무위','자유','여유','관점 전환'], abbr:'DA',
+  },
+};
+
+const QUESTIONS = [
+  {
+    id:1, text:'단톡방에서 친구 둘이 서로 자기가 맞다고 싸우고 있다. 나는?',
+    options:[
+      {text:'둘 다 각자 입장에선 맞는 말이야. 상황에 따라 다른 거지.',weights:{truth:-2,life:+1}},
+      {text:'"그런데 애초에 \'맞다\'는 게 뭘까?" 하고 질문을 던진다.',weights:{truth:+2,life:-1}},
+      {text:'싸움부터 말린다. 친구 사이에 예의는 지켜야지.',weights:{truth:+1,life:+2}},
+      {text:'조용히 알람을 끈다. 싸울 일도 아닌데 뭘.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:2, text:'시험 범위가 엄청 넓다. 공부 방법을 고르라면?',
+    options:[
+      {text:'일단 시험에 잘 나올 것만 골라서 전략적으로 공부한다.',weights:{truth:-2,life:+1}},
+      {text:'"왜 이런 공식이 나왔을까?" 원리부터 파고든다.',weights:{truth:+2,life:-1}},
+      {text:'모둠 스터디를 만들어 서로 가르쳐 가며 다 같이 완성한다.',weights:{truth:+1,life:+2}},
+      {text:'억지로 외우기보다 천천히 내 페이스로 이해해 나간다.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:3, text:'SNS에 올린 내 게시물에 악플이 달렸다. 나는?',
+    options:[
+      {text:'저 사람은 저 사람 생각이 있겠지. 딱히 틀린 말도 아닐 수 있어.',weights:{truth:-2,life:+1}},
+      {text:'왜 그런 댓글을 달았는지 논리적으로 반박해 본다.',weights:{truth:+2,life:-1}},
+      {text:'주변 친구들에게 상황을 알리고 함께 대응 방법을 찾는다.',weights:{truth:+1,life:+2}},
+      {text:'그냥 신경 끄고 게시물을 내린다. 별 의미 없는 일이야.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:4, text:'학교 축제 준비 중 팀원들이 의견이 제각각이다. 나는?',
+    options:[
+      {text:'어떤 아이디어가 관객에게 제일 잘 먹힐지 분석해서 설득한다.',weights:{truth:-2,life:+2}},
+      {text:'"우리가 진짜 하고 싶은 게 뭔지"를 먼저 명확히 하자고 한다.',weights:{truth:+2,life:-1}},
+      {text:'다수결보다는 모두가 납득할 방법을 찾아 끝까지 조율한다.',weights:{truth:+1,life:+2}},
+      {text:'정해지면 따를게. 어떤 방식이든 다 나름의 재미가 있을 테니까.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:5, text:'게임에서 내가 옳다고 생각하는 전략과 팀원들의 전략이 충돌한다. 나는?',
+    options:[
+      {text:'상황마다 최선의 전략은 달라. 팀원 의견에 맞춘다.',weights:{truth:-2,life:+1}},
+      {text:'내 전략이 왜 더 나은지 데이터와 논리로 설명한다.',weights:{truth:+2,life:-1}},
+      {text:'팀이 이기는 게 우선이니까 함께 연습하며 맞춰간다.',weights:{truth:+1,life:+2}},
+      {text:'굳이 내 방식을 강요하지 않는다. 흘러가는 대로 해보자.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:6, text:'친한 친구가 명백히 잘못된 정보를 믿고 있다. 어떻게 할까?',
+    options:[
+      {text:'사실은 다를 수 있지만, 친구한테 중요한 믿음이면 굳이 뺏을 필요 없지.',weights:{truth:-2,life:+1}},
+      {text:'틀린 근거를 하나씩 짚어주며 올바른 정보를 찾게 돕는다.',weights:{truth:+2,life:-1}},
+      {text:'바로 말해준다. 친한 친구일수록 솔직하게 이야기해야 해.',weights:{truth:+1,life:+2}},
+      {text:'직접 물어보지 않는 이상 굳이 개입 안 한다. 각자의 판단이 있으니까.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:7, text:'자유 과제로 뭐든 발표해도 된다고 한다. 나는?',
+    options:[
+      {text:'선생님과 친구들이 가장 흥미로워할 주제를 계산해서 고른다.',weights:{truth:-2,life:+2}},
+      {text:'오래 궁금했던 질문 하나를 정해 그것의 답을 파고든다.',weights:{truth:+2,life:-1}},
+      {text:'우리 반 모두에게 도움이 될 정보를 준비한다.',weights:{truth:+1,life:+2}},
+      {text:'특별히 정해진 규칙 없이 그냥 내가 좋아하는 것을 이야기한다.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:8, text:'점심시간에 혼자 있게 됐다. 가장 끌리는 행동은?',
+    options:[
+      {text:'주변을 관찰하며 누구에게 다가가면 좋을지 살핀다.',weights:{truth:-2,life:+2}},
+      {text:'읽던 책이나 글을 계속 읽으며 생각에 잠긴다.',weights:{truth:+2,life:-2}},
+      {text:'아는 친구를 찾아가서 합류한다. 혼자보다 함께가 낫지.',weights:{truth:+1,life:+2}},
+      {text:'이 시간도 나쁘지 않다. 조용히 음악 들으며 쉰다.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:9, text:'"열심히 살아야 한다"는 말에 대해 나는?',
+    options:[
+      {text:'열심히의 기준은 사람마다 달라. 내 기준에서 잘 살면 그게 열심히지.',weights:{truth:-2,life:+1}},
+      {text:'"열심히"가 진짜 무엇을 의미하는지 먼저 따져봐야 해.',weights:{truth:+2,life:-1}},
+      {text:'맞아. 노력하고 기여하는 삶이 가치 있다고 생각해.',weights:{truth:+1,life:+2}},
+      {text:'억지로 달리는 것보다 자연스럽게 흘러가는 게 더 건강하다고 본다.',weights:{truth:-1,life:-2}},
+    ],
+  },
+  {
+    id:10, text:'진로를 고민 중이다. 어떤 기준이 가장 중요할 것 같아?',
+    options:[
+      {text:'현실적으로 수요가 많고 돈 잘 버는 직업.',weights:{truth:-2,life:+2}},
+      {text:'내가 진짜 궁금해하고, 깊이 탐구하고 싶은 분야.',weights:{truth:+2,life:-1}},
+      {text:'사람들에게 도움이 되고 사회에 기여할 수 있는 일.',weights:{truth:+1,life:+2}},
+      {text:'남의 기준보다 내 감각과 흐름에 맞는 삶의 방식.',weights:{truth:-1,life:-2}},
+    ],
+  },
+];
+
+/* ════════════════════════════════════════
+   2. 판정 로직 (Stage 1 그대로)
+════════════════════════════════════════ */
+function calcScores(answers) {
+  return answers.reduce(
+    (acc,w) => ({truth:acc.truth+w.truth, life:acc.life+w.life}),
+    {truth:0, life:0}
+  );
+}
+
+function assignSchool(scores) {
+  const {truth,life} = scores;
+  const isBorderline = truth===0 || life===0;
+  let school;
+  if      (truth>0 && life<0)  school='socrates';
+  else if (truth>0 && life>0)  school='confucian';
+  else if (truth<0 && life>0)  school='sophist';
+  else if (truth<0 && life<0)  school='daoist';
+  else if (truth===0 && life===0) school='socrates';
+  else if (truth===0 && life>0)   school='confucian';
+  else if (truth===0 && life<0)   school='daoist';
+  else if (truth>0  && life===0)  school='socrates';
+  else                             school='sophist';
+  return {school, isBorderline};
+}
+
+function getSecondSchool(scores) {
+  const {truth,life} = scores;
+  const flipTruth = Math.abs(truth) < Math.abs(life);
+  const t2 = flipTruth ? -truth : truth;
+  const l2 = flipTruth ? life  : -life;
+  return assignSchool({truth:t2||(-1), life:l2||(-1)}).school;
+}
+
+function encodeResultCode(scores, schoolId) {
+  const abbr = SCHOOLS[schoolId].abbr;
+  const ts = scores.truth>=0 ? '+' : '-';
+  const ls = scores.life >=0 ? '+' : '-';
+  return `${abbr}${ts}${Math.abs(scores.truth)}${ls}${Math.abs(scores.life)}`;
+}
+
+function decodeResultCode(code) {
+  const m = code.match(/^([A-Z]{2})([+-])(\d+)([+-])(\d+)$/);
+  if (!m) return null;
+  const [,abbr,ts,ta,ls,la] = m;
+  const school = Object.values(SCHOOLS).find(s=>s.abbr===abbr);
+  if (!school) return null;
+  return {
+    school: school.id,
+    scores: {
+      truth: parseInt(ta)*(ts==='+'?1:-1),
+      life:  parseInt(la)*(ls==='+'?1:-1),
+    },
+  };
+}
+
+/* ════════════════════════════════════════
+   3. 자동 테스트 (Stage 1 그대로)
+════════════════════════════════════════ */
+function runTests() {
+  let pass=0, fail=0;
+  function assert(label,condition) {
+    if (condition) { console.log(`✅ ${label}`); pass++; }
+    else           { console.error(`❌ ${label}`); fail++; }
+  }
+  console.group('📚 학파 배정 로직 자동 테스트');
+  assert('truth+,life- → 소크라테스', assignSchool({truth:5,life:-3}).school==='socrates');
+  assert('truth+,life+ → 유가',       assignSchool({truth:3,life:4}).school==='confucian');
+  assert('truth-,life+ → 소피스트',   assignSchool({truth:-4,life:2}).school==='sophist');
+  assert('truth-,life- → 도가',       assignSchool({truth:-6,life:-5}).school==='daoist');
+  assert('0,0 → 소크라테스 borderline', (()=>{const r=assignSchool({truth:0,life:0});return r.school==='socrates'&&r.isBorderline;})());
+  assert('0,life+ → 유가 borderline',   (()=>{const r=assignSchool({truth:0,life:3});return r.school==='confucian'&&r.isBorderline;})());
+  assert('0,life- → 도가 borderline',   (()=>{const r=assignSchool({truth:0,life:-3});return r.school==='daoist'&&r.isBorderline;})());
+  assert('truth+,0 → 소크라테스 borderline',(()=>{const r=assignSchool({truth:2,life:0});return r.school==='socrates'&&r.isBorderline;})());
+  assert('truth-,0 → 소피스트 borderline', (()=>{const r=assignSchool({truth:-2,life:0});return r.school==='sophist'&&r.isBorderline;})());
+  const sc=calcScores([{truth:2,life:-1},{truth:-1,life:2},{truth:3,life:0}]);
+  assert('calcScores truth=4', sc.truth===4);
+  assert('calcScores life=1',  sc.life===1);
+  assert('getSecondSchool (소크라테스→유가)', getSecondSchool({truth:5,life:-1})==='confucian');
+  [{scores:{truth:7,life:-3},school:'socrates'},{scores:{truth:-4,life:5},school:'sophist'},
+   {scores:{truth:-4,life:0},school:'sophist'},{scores:{truth:0,life:0},school:'socrates'}]
+  .forEach(({scores,school})=>{
+    const code=encodeResultCode(scores,school);
+    const d=decodeResultCode(code);
+    assert(`결과코드 왕복: ${code}`, d&&d.school===school&&d.scores.truth===scores.truth&&d.scores.life===scores.life);
+  });
+  console.groupEnd();
+  console.log(`\n결과: ${pass} 통과 / ${fail} 실패`);
+}
+runTests();
+
+/* ════════════════════════════════════════
+   4. SVG 엠블럼
+════════════════════════════════════════ */
+function svgSophist(color, size=48) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <line x1="24" y1="7" x2="24" y2="41" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="7"  y1="17" x2="41" y2="17" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="10" y1="17" x2="7"  y2="27" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="10" y1="17" x2="13" y2="27" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M5 27 Q10 33 15 27" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <line x1="38" y1="17" x2="35" y2="27" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="38" y1="17" x2="41" y2="27" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M33 27 Q38 33 43 27" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <line x1="18" y1="41" x2="30" y2="41" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function svgSocrates(color, size=48) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path d="M24 5 C19 10 16 16 18 22 C20 28 28 28 30 22 C32 16 29 10 24 5Z" fill="${color}"/>
+    <path d="M24 11 C22 14 21 18 22.5 22 C23.5 24 24.5 24 25.5 22 C27 18 26 14 24 11Z"
+          fill="white" opacity="0.3"/>
+    <rect x="20" y="24" width="8" height="6" rx="1.5" fill="${color}" opacity="0.85"/>
+    <rect x="21" y="30" width="6" height="14" rx="3" fill="${color}" opacity="0.75"/>
+    <line x1="21" y1="33" x2="27" y2="33" stroke="white" stroke-width="0.8" opacity="0.25"/>
+    <line x1="21" y1="37" x2="27" y2="37" stroke="white" stroke-width="0.8" opacity="0.25"/>
+  </svg>`;
+}
+
+function svgConfucian(color, size=48) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <rect x="21" y="4" width="6" height="22" rx="3" fill="${color}" opacity="0.85"/>
+    <ellipse cx="24" cy="4" rx="3" ry="2" fill="${color}"/>
+    <rect x="20" y="24" width="8" height="5" rx="1.5" fill="${color}"/>
+    <path d="M20 29 L24 44 L28 29Z" fill="${color}" opacity="0.9"/>
+    <line x1="24" y1="31" x2="24" y2="42" stroke="white" stroke-width="0.8" opacity="0.3"/>
+  </svg>`;
+}
+
+function svgDaoist(color, size=48) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path d="M4 16 C8 12 12 12 16 16 C20 20 24 20 28 16 C32 12 36 12 40 16 C42 18 43 19 44 19"
+          stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M4 24 C8 20 12 20 16 24 C20 28 24 28 28 24 C32 20 36 20 40 24 C42 26 43 27 44 27"
+          stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M4 32 C8 28 12 28 16 32 C20 36 24 36 28 32 C32 28 36 28 40 32 C42 34 43 35 44 35"
+          stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+const SVG_FNS = {
+  sophist:   svgSophist,
+  socrates:  svgSocrates,
+  confucian: svgConfucian,
+  daoist:    svgDaoist,
+};
+
+/* ════════════════════════════════════════
+   5. 학파 계보 / 해설 / 궁합
+════════════════════════════════════════ */
+const LINEAGE = {
+  sophist:   '현실과 설득의 기술을 닦는 자들의 학파',
+  socrates:  '질문에서 시작해(소크라테스), 이상적 진리로 뻗어가고(플라톤), 현실 탐구로 완성된(아리스토텔레스) 계보',
+  confucian: '배움과 관계로 세상을 바꾸는 자들의 학파 — 공자·맹자·순자의 계보',
+  daoist:    '자연의 흐름을 따르며 관점을 해방시키는 자들의 학파',
+};
+
+function getDescription(schoolId, scores) {
+  const paras = {
+    sophist: [
+      '지혜의 두루마리가 그대를 살폈노라. 그대는 세상의 흐름을 읽는 눈을 타고났다. 진리란 상황마다 다르고, 설득이란 단순한 말재주가 아니라 상대를 이해하는 기술임을 그대는 이미 알고 있다. 프로타고라스가 말했듯, "인간이 만물의 척도"—그것이 그대의 출발점이다.',
+      '그대의 강점은 유연함과 현실 감각이다. 어떤 상황에서도 빠르게 상황을 파악하고, 다양한 입장을 이해하며, 적절한 순간에 적절한 말을 꺼낸다. 토론에서 그대는 논리만큼이나 분위기와 흐름을 읽는 데 능하며, 그 능력으로 갈등을 녹이거나 사람들을 한 방향으로 이끈다.',
+      '두루마리는 이렇게도 적는다—유연함이 때로는 "원칙 없음"으로 보일 수 있다. 하지만 그대만의 기준을 세우되, 그것을 모든 사람에게 강요하지 않는 지혜—그것이 소피스트 학파의 진정한 기술이다.',
+    ],
+    socrates: [
+      '지혜의 두루마리가 그대를 살폈노라. 그대 안에는 끊임없이 "왜?"를 묻는 목소리가 있다. 소크라테스가 아테네 광장에서 행인들에게 질문을 던졌듯, 그대도 보이는 것 너머의 진실을 찾으려 한다. "아는 척"을 가장 경계하는 자—바로 그대다.',
+      scores.truth > 8
+        ? '특히 그대 안에는 플라톤의 기질이 강하게 흐른다. 현실의 불완전함 너머에 완전한 이데아가 있을 것이라는 믿음, 이상을 향해 사고를 밀어붙이는 힘—그것이 그대의 특기다. 동굴 밖의 빛을 향해 나아가는 철학자, 그것이 그대의 모습이다.'
+        : '특히 그대 안에는 아리스토텔레스의 기질이 강하게 흐른다. 추상적인 이론보다 눈앞의 현상을 꼼꼼히 관찰하고 분류하며 이해하려는 탐구 정신—그것이 그대의 방식이다. 아리스토텔레스가 자연을 기록했듯, 그대는 세상을 있는 그대로 바라보며 그 속에서 이치를 찾아낸다.',
+      '두루마리는 이렇게도 적는다—앎을 향한 열정은 때로 주변 사람들에게 부담이 될 수 있다. 질문하되, 상대가 스스로 답을 찾을 수 있도록 기다릴 줄도 아는 것—그것이 소크라테스 학파의 완성이다.',
+    ],
+    confucian: [
+      '지혜의 두루마리가 그대를 살폈노라. 그대는 "함께"에서 의미를 찾는 자다. 공자가 인仁을 삶의 중심에 놓았듯, 그대에게도 사람과 사람 사이의 신뢰, 예의, 관계가 무엇보다 소중하다. 올바른 앎은 바른 행동으로 이어져야 한다는 것을 그대는 이미 알고 있다.',
+      '그대의 힘은 꾸준함과 책임감이다. 맡은 일을 끝까지 해내고, 공동체를 위해 기꺼이 자신의 몫 이상을 감당한다. 맹자가 말한 사단四端처럼, 그대에게는 타인의 아픔을 함께 느끼는 공감 능력과 옳고 그름을 구분하는 판단력이 자연스럽게 배어 있다.',
+      '두루마리는 이렇게도 적는다—모두를 위해 달리다 보면 스스로를 잃을 때가 있다. 그대 자신도 소중한 공동체의 일원임을 잊지 마라. 순자가 말했듯, 자기 자신을 바르게 하는 것이 세상을 바르게 하는 첫걸음이다.',
+    ],
+    daoist: [
+      '지혜의 두루마리가 그대를 살폈노라. 그대는 강물처럼 흐른다. 억지로 방향을 정하지 않고, 상황의 자연스러운 흐름에 몸을 맡기는 것—노자가 말한 무위無為가 그대의 삶 방식에 깃들어 있다. 텅 빈 그릇이 가장 많이 담을 수 있듯, 그대의 여백은 강점이다.',
+      '그대의 진정한 힘은 관점의 자유로움이다. 남들이 당연하게 여기는 것을 한 발짝 물러서 바라보고, 전혀 다른 각도에서 해석해낸다. 장자가 나비가 되는 꿈을 꿨듯, 그대에게는 고정된 답이 없다—그리고 바로 그것이 그대의 강점이다.',
+      '두루마리는 이렇게도 적는다—자연스러움은 아름답지만, 때로는 명확한 결정을 내려야 할 순간도 온다. 흘러가되, 흘러가야 할 방향을 아는 것—그것이 도가 학파의 깊은 지혜다.',
+    ],
+  };
+  return paras[schoolId] || paras.sophist;
+}
+
+const DEBATE_PAIRS = {
+  sophist:   { partner:'socrates',  reason:'진리가 있느냐 없느냐 — 가장 뜨거운 철학 논쟁의 두 주인공. 서로의 논리를 부딪힐 때 가장 깊은 대화가 나온다.' },
+  socrates:  { partner:'sophist',   reason:'서로의 주장을 가장 날카롭게 시험할 수 있는 지적 라이벌. 함께 토론하면 둘 다 날카로워진다.' },
+  confucian: { partner:'daoist',    reason:'사회적 책임과 자연스러운 자유 — 정반대이기에 더 깊은 대화가 가능한 관계다.' },
+  daoist:    { partner:'confucian', reason:'규범과 무위의 긴장 속에서 서로를 더 잘 이해하게 되는 보완적 관계다.' },
+};
+
+/* ════════════════════════════════════════
+   6. SPA 상태 & 유틸
+════════════════════════════════════════ */
+let state = {
+  studentName:'', classId:'',
+  shuffledQuestions:[], currentIdx:0, answers:[],
+  lastScores:null, lastSchool:null, lastBorderline:false,
+};
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('active');
+  });
+  const target = document.getElementById(id);
+  target.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ════════════════════════════════════════
+   7. localStorage
+════════════════════════════════════════ */
+const LS_KEY = 'phil_academy_last_result';
+function saveResult(data) { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+function loadResult() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch { return null; }
+}
+
+/* ════════════════════════════════════════
+   8. 시작 화면
+════════════════════════════════════════ */
+const classSelect = document.getElementById('class-select');
+const nameInput   = document.getElementById('name-input');
+const startBtn    = document.getElementById('start-btn');
+
+(function applyUrlClass() {
+  const params = new URLSearchParams(location.search);
+  const c = params.get('class');
+  if (c) {
+    const opt = [...classSelect.options].find(o=>o.value===c);
+    if (opt) classSelect.value = c;
+  }
+})();
+
+function updateStartBtn() { startBtn.disabled = !classSelect.value; }
+classSelect.addEventListener('change', updateStartBtn);
+updateStartBtn();
+
+(function showPrevResult() {
+  const prev = loadResult();
+  if (!prev) return;
+  const section = document.getElementById('prev-result-section');
+  section.style.display = 'flex';
+  document.getElementById('prev-school-name').textContent = SCHOOLS[prev.school]?.name ?? prev.school;
+  document.getElementById('prev-result-btn').addEventListener('click', ()=>{
+    renderResult(prev.scores, prev.school, prev.classId??'', prev.isBorderline??false);
+    showScreen('screen-result');
+  });
+})();
+
+startBtn.addEventListener('click', ()=>{
+  state.studentName = nameInput.value.trim();
+  state.classId     = classSelect.value;
+  state.shuffledQuestions = shuffle(QUESTIONS).map(q=>({...q, options:shuffle(q.options)}));
+  state.currentIdx  = 0;
+  state.answers     = new Array(QUESTIONS.length).fill(null);
+  showScreen('screen-question');
+  renderQuestion();
+});
+
+/* ════════════════════════════════════════
+   9. 문항 화면
+════════════════════════════════════════ */
+function renderQuestion() {
+  const total = state.shuffledQuestions.length;
+  const idx   = state.currentIdx;
+  const q     = state.shuffledQuestions[idx];
+
+  const pct = ((idx+1)/total*100).toFixed(0);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `${idx+1} / ${total}`;
+  document.getElementById('question-number').textContent = `Q. ${idx+1}`;
+  document.getElementById('question-text').textContent = q.text;
+  document.getElementById('prev-btn').disabled = idx===0;
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  q.options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt.text;
+    const saved = state.answers[idx];
+    if (saved && saved.truth===opt.weights.truth && saved.life===opt.weights.life) {
+      btn.classList.add('selected');
+    }
+    btn.addEventListener('click', ()=>selectOption(opt.weights));
+    list.appendChild(btn);
+  });
+}
+
+function selectOption(weights) {
+  state.answers[state.currentIdx] = weights;
+  if (state.currentIdx < state.shuffledQuestions.length-1) {
+    state.currentIdx++;
+    renderQuestion();
+  } else {
+    finishTest();
+  }
+}
+
+document.getElementById('prev-btn').addEventListener('click', ()=>{
+  if (state.currentIdx>0) { state.currentIdx--; renderQuestion(); }
+});
+
+/* ════════════════════════════════════════
+   10. 연출 → 결과
+════════════════════════════════════════ */
+function finishTest() {
+  const answered = state.answers.filter(Boolean);
+  const scores   = calcScores(answered);
+  const {school, isBorderline} = assignSchool(scores);
+
+  state.lastScores    = scores;
+  state.lastSchool    = school;
+  state.lastBorderline= isBorderline;
+
+  saveResult({school, scores, classId:state.classId, isBorderline});
+  submitToFirestore(school, scores, state.classId); // 비동기, 실패해도 UI 영향 없음
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) {
+    renderResult(scores, school, state.classId, isBorderline);
+    showScreen('screen-result');
+    return;
+  }
+  startReveal(school, scores, state.classId, isBorderline);
+}
+
+function startReveal(schoolId, scores, classId, isBorderline) {
+  // 엠블럼 주입
+  ['sophist','socrates','confucian','daoist'].forEach(id=>{
+    const el = document.getElementById('ri-'+id);
+    if (el) el.innerHTML = SVG_FNS[id](SCHOOLS[id].color, 40);
+  });
+
+  document.getElementById('reveal-phrase').textContent = '지혜의 두루마리가 그대를 살피고 있다…';
+  document.getElementById('reveal-sub').classList.remove('visible');
+  document.getElementById('reveal-sub').textContent = '';
+
+  // reveal 카드 리셋
+  document.querySelectorAll('.reveal-card').forEach(c=>{
+    c.classList.remove('winner','loser');
+  });
+
+  showScreen('screen-reveal');
+
+  // 1.5s 후 승자 판정 연출
+  setTimeout(()=>{
+    document.getElementById('reveal-phrase').textContent = '두루마리가 그대의 학파를 찾았노라…';
+    document.querySelectorAll('.reveal-card').forEach(c=>{
+      if (c.dataset.school===schoolId) c.classList.add('winner');
+      else                              c.classList.add('loser');
+    });
+    const sub = document.getElementById('reveal-sub');
+    sub.textContent = SCHOOLS[schoolId].name + ' 으로 배정되었습니다!';
+    sub.classList.add('visible');
+  }, 1500);
+
+  // 2.4s 후 결과 화면
+  setTimeout(()=>{
+    renderResult(scores, schoolId, classId, isBorderline);
+    showScreen('screen-result');
+  }, 2600);
+}
+
+/* ════════════════════════════════════════
+   11. 결과 렌더링
+════════════════════════════════════════ */
+function renderResult(scores, schoolId, classId, isBorderline=false) {
+  const s = SCHOOLS[schoolId];
+
+  /* 헤더 */
+  const header = document.getElementById('result-header');
+  header.dataset.school = schoolId;
+  document.getElementById('result-emblem-svg').innerHTML = SVG_FNS[schoolId](s.color, 72);
+  const declEl = document.getElementById('result-declaration-top');
+  declEl.textContent = state.studentName ? `${state.studentName}, 그대는…` : '그대는…';
+  document.getElementById('result-school-title').textContent = s.name;
+  document.getElementById('result-motto-text').textContent = `"${s.motto}"`;
+  document.getElementById('result-lineage').textContent = LINEAGE[schoolId];
+
+  /* 경계 메시지 */
+  document.getElementById('borderline-note').classList.toggle('visible', isBorderline);
+
+  /* 해설 */
+  const descCard = document.getElementById('description-card');
+  descCard.innerHTML = '';
+  getDescription(schoolId, scores).forEach(para=>{
+    const p = document.createElement('p');
+    p.textContent = para;
+    descCard.appendChild(p);
+  });
+
+  /* 4분면 차트 */
+  renderQuadrant(scores, schoolId);
+
+  /* 축 점수 바 */
+  const MAX = 20;
+  function renderBar(fillId, valId, val) {
+    const fill = document.getElementById(fillId);
+    fill.style.background = val>=0 ? '#7C6FD6' : '#E8800A';
+    fill.style.left  = val>=0 ? '50%' : `${((val+MAX)/(MAX*2))*100}%`;
+    fill.style.width = `${(Math.abs(val)/MAX)*50}%`;
+    document.getElementById(valId).textContent = `점수: ${val>0?'+':''}${val}`;
+  }
+  renderBar('truth-bar','truth-value', scores.truth);
+  renderBar('life-bar', 'life-value',  scores.life);
+
+  /* 궁합 */
+  const secondId = getSecondSchool(scores);
+  const debate   = DEBATE_PAIRS[schoolId];
+  const afEl = document.getElementById('affinity-inner');
+  afEl.innerHTML = `
+    <div class="affinity-row">
+      <span class="affinity-label">인접 성향</span>
+      <span class="affinity-val"><strong>${SCHOOLS[secondId].name}</strong><br>
+        <span style="font-size:0.82rem;color:var(--muted)">두 번째로 가까운 학파입니다.</span></span>
+    </div>
+    <div class="affinity-row">
+      <span class="affinity-label">토론 상대</span>
+      <span class="affinity-val"><strong>${SCHOOLS[debate.partner].name}</strong><br>
+        <span style="font-size:0.82rem;color:var(--muted)">${debate.reason}</span></span>
+    </div>`;
+
+  /* 결과 코드 */
+  document.getElementById('result-code').textContent = encodeResultCode(scores, schoolId);
+
+  /* 메타 (학급) */
+  // 학급 정보를 결과 코드 라벨에 병기
+  if (classId) {
+    document.querySelector('.result-code-label').textContent = `결과 코드 — ${classId}반`;
+  }
+}
+
+function renderQuadrant(scores, schoolId) {
+  const svg = document.getElementById('quadrant-svg');
+  const W=260, H=260, cx=130, cy=130, R=100;
+  const MAX=20;
+
+  const dotX = cx + (scores.truth/MAX)*R;
+  const dotY = cy - (scores.life/MAX)*R;
+  const sc   = SCHOOLS[schoolId];
+
+  svg.innerHTML = `
+    <!-- 배경 사분면 -->
+    <rect x="${cx}" y="${cy-R}" width="${R}" height="${R}" fill="#071D4A" opacity="0.4" rx="2"/>
+    <rect x="${cx-R}" y="${cy-R}" width="${R}" height="${R}" fill="#3A1F04" opacity="0.4" rx="2"/>
+    <rect x="${cx}" y="${cy}" width="${R}" height="${R}" fill="#052E16" opacity="0.4" rx="2"/>
+    <rect x="${cx-R}" y="${cy}" width="${R}" height="${R}" fill="#2E1065" opacity="0.4" rx="2"/>
+
+    <!-- 축 -->
+    <line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="#3A3850" stroke-width="1.5"/>
+    <line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="#3A3850" stroke-width="1.5"/>
+
+    <!-- 사분면 라벨 -->
+    <text x="${cx+8}" y="${cy-R+16}" font-size="9" fill="#BFDBFE" font-weight="700" opacity="0.9">소크라테스</text>
+    <text x="${cx-R+4}" y="${cy-R+16}" font-size="9" fill="#FED7AA" font-weight="700" opacity="0.9">소피스트</text>
+    <text x="${cx+8}" y="${cy+R-6}" font-size="9" fill="#BBF7D0" font-weight="700" opacity="0.9">유가</text>
+    <text x="${cx-R+4}" y="${cy+R-6}" font-size="9" fill="#DDD6FE" font-weight="700" opacity="0.9">도가</text>
+
+    <!-- 축 라벨 -->
+    <text x="${cx-R}" y="${cy-6}" font-size="8" fill="#A7A9BE" text-anchor="start">상대적</text>
+    <text x="${cx+R}" y="${cy-6}" font-size="8" fill="#A7A9BE" text-anchor="end">절대적</text>
+    <text x="${cx+4}" y="${cy-R+8}" font-size="8" fill="#A7A9BE">사회</text>
+    <text x="${cx+4}" y="${cy+R}" font-size="8" fill="#A7A9BE">내면</text>
+
+    <!-- 원점 -->
+    <circle cx="${cx}" cy="${cy}" r="3" fill="#3A3850"/>
+
+    <!-- 내 위치 -->
+    <circle cx="${dotX}" cy="${dotY}" r="10" fill="${sc.color}" opacity="0.25"/>
+    <circle cx="${dotX}" cy="${dotY}" r="6"  fill="${sc.color}" opacity="0.8"/>
+    <circle cx="${dotX}" cy="${dotY}" r="3"  fill="white"/>
+  `;
+}
+
+/* ════════════════════════════════════════
+   12. 공유 기능
+════════════════════════════════════════ */
+document.getElementById('btn-copy').addEventListener('click', ()=>{
+  if (!state.lastSchool) return;
+  const s  = SCHOOLS[state.lastSchool];
+  const sc = state.lastScores;
+  const code = encodeResultCode(sc, state.lastSchool);
+  const text =
+`【고대 철학 아카데미 배정 결과】
+${state.studentName ? state.studentName+'의 ' : ''}학파: ${s.name}
+좌우명: "${s.motto}"
+진리관: ${sc.truth>0?'+':''}${sc.truth} / 삶의 방향: ${sc.life>0?'+':''}${sc.life}
+2위 학파: ${SCHOOLS[getSecondSchool(sc)]?.name}
+결과 코드: ${code}`;
+
+  navigator.clipboard.writeText(text)
+    .then(()=>showToast('결과가 클립보드에 복사되었습니다!'))
+    .catch(()=>showToast('복사 실패 — 결과 코드: '+code));
+});
+
+document.getElementById('btn-save').addEventListener('click', ()=>{
+  if (!state.lastSchool) return;
+  drawResultCanvas(state.lastScores, state.lastSchool, state.studentName);
+});
+
+function drawResultCanvas(scores, schoolId, name) {
+  const s   = SCHOOLS[schoolId];
+  const W=480, H=640;
+  const canvas = document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d');
+
+  // 배경
+  ctx.fillStyle = '#0F0E17';
+  ctx.fillRect(0,0,W,H);
+
+  // 상단 색 띠
+  const grad = ctx.createLinearGradient(0,0,W,180);
+  grad.addColorStop(0, s.color+'33');
+  grad.addColorStop(1, '#0F0E17');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,180);
+
+  // 테두리
+  ctx.strokeStyle = s.color;
+  ctx.lineWidth   = 3;
+  ctx.strokeRect(12,12,W-24,H-24);
+
+  // 학파 이름
+  ctx.fillStyle   = '#FFFFFF';
+  ctx.font        = 'bold 36px sans-serif';
+  ctx.textAlign   = 'center';
+  ctx.fillText(s.name, W/2, 90);
+
+  // 좌우명
+  ctx.fillStyle = s.color;
+  ctx.font      = 'italic 18px sans-serif';
+  ctx.fillText(`"${s.motto}"`, W/2, 128);
+
+  // 이름
+  if (name) {
+    ctx.fillStyle = '#A7A9BE';
+    ctx.font      = '16px sans-serif';
+    ctx.fillText(name, W/2, 162);
+  }
+
+  // 구분선
+  ctx.strokeStyle = '#3A3850';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(40, 190); ctx.lineTo(W-40, 190); ctx.stroke();
+
+  // 철학자 계보
+  ctx.fillStyle = '#D4D3E8';
+  ctx.font      = '15px sans-serif';
+  ctx.fillText(LINEAGE[schoolId], W/2, 220);
+
+  // 축 점수
+  ctx.fillStyle = '#A7A9BE';
+  ctx.font      = '13px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('진리관 축', 60, 270);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font      = 'bold 20px monospace';
+  ctx.fillText(`${scores.truth>0?'+':''}${scores.truth}`, 60, 295);
+
+  ctx.fillStyle = '#A7A9BE';
+  ctx.font      = '13px sans-serif';
+  ctx.fillText('삶의 방향 축', W/2+20, 270);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font      = 'bold 20px monospace';
+  ctx.fillText(`${scores.life>0?'+':''}${scores.life}`, W/2+20, 295);
+
+  // 미니 4분면
+  const qx=W/2, qy=420, qr=80;
+  ctx.strokeStyle='#3A3850'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(qx-qr,qy); ctx.lineTo(qx+qr,qy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(qx,qy-qr); ctx.lineTo(qx,qy+qr); ctx.stroke();
+
+  const MAX=20;
+  const dx=qx+(scores.truth/MAX)*qr;
+  const dy=qy-(scores.life/MAX)*qr;
+  ctx.beginPath(); ctx.arc(dx,dy,10,0,Math.PI*2);
+  ctx.fillStyle=s.color+'55'; ctx.fill();
+  ctx.beginPath(); ctx.arc(dx,dy,6,0,Math.PI*2);
+  ctx.fillStyle=s.color; ctx.fill();
+  ctx.beginPath(); ctx.arc(dx,dy,3,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill();
+
+  // 결과 코드
+  ctx.fillStyle   = '#A5B4FC';
+  ctx.font        = '14px monospace';
+  ctx.textAlign   = 'center';
+  ctx.letterSpacing='3px';
+  ctx.fillText(encodeResultCode(scores,schoolId), W/2, 540);
+
+  // 하단 워터마크
+  ctx.fillStyle = '#3A3850';
+  ctx.font      = '12px sans-serif';
+  ctx.fillText('고대 철학 아카데미 — 학파 배정 시험', W/2, 610);
+
+  // 다운로드
+  const link = document.createElement('a');
+  link.download = `철학아카데미_${s.name}_결과.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('이미지가 저장되었습니다!');
+}
+
+/* ════════════════════════════════════════
+   13. 재시작
+════════════════════════════════════════ */
+document.getElementById('restart-btn').addEventListener('click', ()=>{
+  showScreen('screen-start');
+});
+
+/* ════════════════════════════════════════
+   15. 교사 대시보드
+════════════════════════════════════════ */
+let _unsubscribe = null;
+let _liveSubmissions   = []; // Firestore onSnapshot 데이터
+let _manualSubmissions = []; // 수동 코드 입력 데이터
+
+/* ?mode=teacher 진입 처리 */
+(function checkTeacherMode() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('mode') !== 'teacher') return;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-teacher').classList.add('active');
+  document.title = '교사 대시보드 — 고대 철학 아카데미';
+  // URL에 class 파라미터 있으면 자동 선택
+  const cls = params.get('class');
+  if (cls) {
+    const sel = document.getElementById('t-class-select');
+    if ([...sel.options].find(o=>o.value===cls)) sel.value = cls;
+  }
+})();
+
+/* 로그인 */
+document.getElementById('t-login-btn')?.addEventListener('click', handleTeacherLogin);
+document.getElementById('t-password')?.addEventListener('keydown', e=>{
+  if (e.key==='Enter') handleTeacherLogin();
+});
+
+function handleTeacherLogin() {
+  const pw = document.getElementById('t-password').value;
+  const errEl = document.getElementById('t-login-err');
+  if (pw === TEACHER_PASSWORD) {
+    document.getElementById('t-login-wrap').style.display = 'none';
+    const dash = document.getElementById('t-dashboard');
+    dash.style.display = 'flex';
+    initTeacherDashboard();
+  } else {
+    errEl.style.display = '';
+    document.getElementById('t-password').value = '';
+  }
+}
+
+function initTeacherDashboard() {
+  const classSel = document.getElementById('t-class-select');
+  subscribeToClass(classSel.value);
+  classSel.addEventListener('change', ()=>subscribeToClass(classSel.value));
+
+  document.getElementById('t-parse-btn')?.addEventListener('click', parseManualCodes);
+  document.getElementById('t-csv-btn')?.addEventListener('click', exportCSV);
+  document.getElementById('t-clear-manual-btn')?.addEventListener('click', ()=>{
+    _manualSubmissions = [];
+    document.getElementById('t-code-input').value = '';
+    document.getElementById('t-code-result').innerHTML = '';
+    updateDashboard();
+  });
+}
+
+function subscribeToClass(classId) {
+  if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+  _liveSubmissions = [];
+  updateDashboard();
+
+  initFirebase().then(database => {
+    if (!database) {
+      document.getElementById('t-prompt').textContent =
+        'Firebase가 설정되지 않았습니다. 결과 코드 수동 입력 기능을 사용해주세요.';
+      return;
+    }
+    const { collection, query, where, onSnapshot } = _fbFns;
+    const col = collection(database, 'submissions');
+    const q = classId ? query(col, where('classId', '==', classId)) : col;
+
+    _unsubscribe = onSnapshot(q, snap => {
+      _liveSubmissions = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      updateDashboard();
+    }, err => console.warn('[Firebase] onSnapshot 오류:', err.message));
+  });
+}
+
+function updateDashboard() {
+  const all = [..._liveSubmissions, ..._manualSubmissions];
+  const total = all.length;
+
+  /* 카운터 */
+  const numEl = document.getElementById('t-count-num');
+  if (numEl) {
+    const prev = parseInt(numEl.textContent) || 0;
+    numEl.textContent = total;
+    if (total > prev) {
+      numEl.classList.add('bump');
+      setTimeout(()=>numEl.classList.remove('bump'), 350);
+    }
+  }
+
+  /* 학파별 집계 */
+  const counts = { sophist:0, socrates:0, confucian:0, daoist:0 };
+  all.forEach(s=>{ if (counts[s.school]!==undefined) counts[s.school]++; });
+
+  renderGauges(counts, total);
+  renderScatter(all);
+  document.getElementById('t-prompt').textContent = getDiscussionPrompt(counts, total);
+}
+
+function renderGauges(counts, total) {
+  const el = document.getElementById('t-gauges');
+  if (!el) return;
+  el.innerHTML = ['sophist','socrates','confucian','daoist'].map(id=>{
+    const s = SCHOOLS[id];
+    const n = counts[id] || 0;
+    const pct = total > 0 ? Math.round(n/total*100) : 0;
+    return `
+      <div class="t-gauge-row">
+        <span class="t-gauge-label" style="color:${s.color}">${s.name}</span>
+        <div class="t-gauge-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+          <div class="t-gauge-fill" style="width:${pct}%;background:${s.color};${n>0?'min-width:52px':''}">
+            ${n>0?`<span class="t-gauge-count">${n}명</span>`:''}
+          </div>
+        </div>
+        <span class="t-gauge-pct">${pct}%</span>
+      </div>`;
+  }).join('');
+}
+
+function renderScatter(submissions) {
+  const svg = document.getElementById('t-scatter');
+  if (!svg) return;
+  const cx=190, cy=190, R=150, MAX=20;
+
+  let sumT=0, sumL=0;
+  submissions.forEach(d=>{sumT+=(d.truth||0); sumL+=(d.life||0);});
+  const avgT = submissions.length ? sumT/submissions.length : 0;
+  const avgL = submissions.length ? sumL/submissions.length : 0;
+
+  const dots = submissions.map(d=>{
+    const x = (cx + ((d.truth||0)/MAX)*R).toFixed(1);
+    const y = (cy - ((d.life||0)/MAX)*R).toFixed(1);
+    const col = SCHOOLS[d.school]?.color || '#888';
+    return `<circle cx="${x}" cy="${y}" r="7" fill="${col}" opacity="0.72"/>`;
+  }).join('');
+
+  const ax=(cx+avgT/MAX*R).toFixed(1), ay=(cy-avgL/MAX*R).toFixed(1);
+  const avgMark = submissions.length > 0 ? `
+    <circle cx="${ax}" cy="${ay}" r="14" fill="none" stroke="white" stroke-width="2.5" stroke-dasharray="5 3"/>
+    <circle cx="${ax}" cy="${ay}" r="5" fill="white"/>
+    <text x="${parseFloat(ax)+16}" y="${parseFloat(ay)+5}" font-size="12" fill="white" font-weight="700">평균</text>` : '';
+
+  svg.innerHTML = `
+    <rect x="${cx}" y="${cy-R}" width="${R}" height="${R}" fill="#071D4A" opacity="0.3"/>
+    <rect x="${cx-R}" y="${cy-R}" width="${R}" height="${R}" fill="#3A1F04" opacity="0.3"/>
+    <rect x="${cx}" y="${cy}" width="${R}" height="${R}" fill="#052E16" opacity="0.3"/>
+    <rect x="${cx-R}" y="${cy}" width="${R}" height="${R}" fill="#2E1065" opacity="0.3"/>
+    <line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="#3A3850" stroke-width="1.5"/>
+    <line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="#3A3850" stroke-width="1.5"/>
+    <text x="${cx+8}" y="${cy-R+18}" font-size="13" fill="#BFDBFE" font-weight="700">소크라테스</text>
+    <text x="${cx-R+6}" y="${cy-R+18}" font-size="13" fill="#FED7AA" font-weight="700">소피스트</text>
+    <text x="${cx+8}" y="${cy+R-8}" font-size="13" fill="#BBF7D0" font-weight="700">유가</text>
+    <text x="${cx-R+6}" y="${cy+R-8}" font-size="13" fill="#DDD6FE" font-weight="700">도가</text>
+    ${dots}${avgMark}`;
+}
+
+function getDiscussionPrompt(counts, total) {
+  if (total === 0) return '학생들의 배정 결과를 기다리고 있습니다…';
+
+  const ordered = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const [topId, topN] = ordered[0];
+  const topPct = topN / total;
+
+  /* 패턴 1: 과반 쏠림 */
+  if (topPct >= 0.5) {
+    const s = SCHOOLS[topId];
+    return `학급의 ${Math.round(topPct*100)}%가 ${s.name}에 배정되었습니다. `+
+      `"${s.motto}"를 함께 읽고, 이 가치에 동의하지 않는 학파 학생에게 반론을 부탁해보세요. `+
+      `반대 성향의 학파는 어떤 주장을 펼칠까요?`;
+  }
+
+  /* 패턴 2: truth 축 대결 (소피스트+도가 vs 소크라테스+유가) */
+  const relPct = Math.abs(
+    (counts.sophist+counts.daoist) - (counts.socrates+counts.confucian)
+  ) / total;
+  if (relPct < 0.2) {
+    return `"진리는 절대적인가, 상대적인가?" — 학급이 이 질문을 두고 거의 반반으로 나뉘었습니다. `+
+      `소크라테스 학파와 소피스트 학파 학생들이 이 주제로 3분 미니 토론을 진행해보세요.`;
+  }
+
+  /* 패턴 3: life 축 대결 (유가+소피스트 vs 소크라테스+도가) */
+  const lifePct = Math.abs(
+    (counts.confucian+counts.sophist) - (counts.socrates+counts.daoist)
+  ) / total;
+  if (lifePct < 0.2) {
+    return `"사회 속에서 적극적으로 살 것인가, 내면의 흐름을 따를 것인가?" `+
+      `— 학급이 이 갈림길에서 균형을 이루고 있습니다. `+
+      `유가·소피스트 학생과 소크라테스·도가 학생이 짝을 이뤄 자신의 선택 이유를 나눠보세요.`;
+  }
+
+  /* 패턴 4: 고른 분포 */
+  return `학급이 4개 학파에 고르게 분포되어 있습니다! `+
+    `각 학파 대표 학생이 나와 "가장 중요한 가치는 무엇인가?"를 주제로 모둠 토론을 진행해보세요. `+
+    `소크라테스=진리, 소피스트=현실, 유가=관계, 도가=자유 — 어떤 학파가 가장 설득력 있었나요?`;
+}
+
+/* 수동 코드 파싱 */
+function parseManualCodes() {
+  const raw = document.getElementById('t-code-input').value;
+  const tokens = raw.split(/[\n,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+
+  let ok = 0; const bad = [];
+  const parsed = [];
+  tokens.forEach(code=>{
+    const d = decodeResultCode(code);
+    if (d) {
+      parsed.push({ school:d.school, truth:d.scores.truth, life:d.scores.life,
+                    classId:'manual', createdAt:null });
+      ok++;
+    } else {
+      bad.push(code);
+    }
+  });
+
+  _manualSubmissions = parsed;
+  updateDashboard();
+
+  const resEl = document.getElementById('t-code-result');
+  if (resEl) {
+    resEl.innerHTML =
+      `<span class="ok">✓ ${ok}개 합산됨</span>` +
+      (bad.length ? ` &nbsp; <span class="warn">✗ 인식 불가: ${bad.join(', ')}</span>` : '');
+  }
+}
+
+/* CSV 내보내기 */
+function exportCSV() {
+  const all = [..._liveSubmissions, ..._manualSubmissions];
+  if (all.length === 0) { showToast('내보낼 데이터가 없습니다.'); return; }
+
+  const rows = [['classId','school','truth','life','createdAt']];
+  all.forEach(d=>{
+    const ts = d.createdAt?.toDate
+      ? d.createdAt.toDate().toISOString()
+      : (d.createdAt || 'manual');
+    rows.push([d.classId||'', d.school||'', d.truth??'', d.life??'', ts]);
+  });
+
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='철학아카데미_결과.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV 파일이 저장되었습니다.');
+}
+
+/* ════════════════════════════════════════
+   14. 디버그 모드 (?debug=sophist|socrates|confucian|daoist|borderline)
+   예: index.html?debug=dao  또는  ?debug=socrates
+════════════════════════════════════════ */
+(function applyDebug() {
+  const params = new URLSearchParams(location.search);
+  const d = params.get('debug');
+  if (!d) return;
+
+  const PRESETS = {
+    sophist:   {school:'sophist',   scores:{truth:-8, life:+6}},
+    sp:        {school:'sophist',   scores:{truth:-8, life:+6}},
+    socrates:  {school:'socrates',  scores:{truth:+8, life:-6}},
+    so:        {school:'socrates',  scores:{truth:+8, life:-6}},
+    confucian: {school:'confucian', scores:{truth:+6, life:+8}},
+    co:        {school:'confucian', scores:{truth:+6, life:+8}},
+    daoist:    {school:'daoist',    scores:{truth:-6, life:-8}},
+    dao:       {school:'daoist',    scores:{truth:-6, life:-8}},
+    da:        {school:'daoist',    scores:{truth:-6, life:-8}},
+    borderline:{school:'socrates',  scores:{truth:+1, life:0}},
+    bl:        {school:'socrates',  scores:{truth:+1, life:0}},
+    plato:     {school:'socrates',  scores:{truth:+14,life:-4}},
+    aristotle: {school:'socrates',  scores:{truth:+6, life:-8}},
+  };
+
+  const key = d.toLowerCase();
+  const preset = PRESETS[key];
+  if (!preset) {
+    console.warn('[debug] 알 수 없는 학파 키:', d, '\n사용 가능:', Object.keys(PRESETS).join(', '));
+    return;
+  }
+
+  const isBorderline = preset.scores.truth===0 || preset.scores.life===0;
+  console.info(`[debug] 강제 결과: ${preset.school} (scores:`, preset.scores, ')');
+  state.lastSchool    = preset.school;
+  state.lastScores    = preset.scores;
+  state.lastBorderline= isBorderline;
+
+  // 클래스 강제 지정 없으면 1반으로
+  state.classId = params.get('class') || '1';
+  state.studentName = params.get('name') || '테스트';
+
+  renderResult(preset.scores, preset.school, state.classId, isBorderline);
+  showScreen('screen-result');
+})();
+</script>
+</body>
+</html>
