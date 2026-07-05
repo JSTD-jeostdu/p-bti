@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>철학탐구반 학파 배정 시험</title>
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<meta property="og:title" content="철학탐구반 학파 배정 시험">
+<meta property="og:description" content="나는 어떤 철학자의 후예일까? 10문항으로 알아보는 고대 철학 학파 배정 시험">
+<meta property="og:image" content="https://jstd-jeostdu.github.io/p-bti/assets/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -754,6 +760,19 @@ body {
 </section>
 
 <div class="toast" id="toast"></div>
+
+<!-- 챗봇 위젯 -->
+<div id="chatbot-widget">
+  <div id="chatbot-panel">
+    <div id="chatbot-panel-header">
+      <span id="chatbot-panel-title">도우미 · 정우T</span>
+      <button id="chatbot-close" title="닫기">✕</button>
+    </div>
+    <div id="chatbot-messages"></div>
+    <div id="chatbot-questions"></div>
+  </div>
+  <img id="chatbot-char" src="assets/sd-jeodu/assets/jeodu-idle.apng" alt="도우미">
+</div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -1891,6 +1910,7 @@ function exportCSV() {
     happy:    BASE + 'jeodu-happy.apng',
     sleeping: BASE + 'jeodu-sleeping.apng',
     waking:   BASE + 'jeodu-waking.apng',
+    notify:   BASE + 'jeodu-notification.apng',
   };
 
   const QA = [
@@ -1906,11 +1926,10 @@ function exportCSV() {
       a: '시작 화면에서 반을 선택한 뒤 이름을 입력하고 [시작]을 누르세요. QR코드로 접속하면 반이 자동으로 지정됩니다.' },
   ];
 
-  const widget = document.getElementById('chatbot-widget');
-  const char   = document.getElementById('chatbot-char');
-  const panel  = document.getElementById('chatbot-panel');
-  const msgs   = document.getElementById('chatbot-messages');
-  const qList  = document.getElementById('chatbot-questions');
+  const char     = document.getElementById('chatbot-char');
+  const panel    = document.getElementById('chatbot-panel');
+  const msgs     = document.getElementById('chatbot-messages');
+  const qList    = document.getElementById('chatbot-questions');
   const closeBtn = document.getElementById('chatbot-close');
 
   let sleepTimer, isOpen = false, isSleeping = false;
@@ -1919,7 +1938,7 @@ function exportCSV() {
 
   function resetSleepTimer() {
     clearTimeout(sleepTimer);
-    sleepTimer = setTimeout(() => { setState('sleeping'); isSleeping = true; }, 25000);
+    sleepTimer = setTimeout(() => { setState('sleeping'); isSleeping = true; }, 30000);
   }
 
   function addMsg(text) {
@@ -1932,27 +1951,32 @@ function exportCSV() {
 
   function renderQuestions() {
     qList.innerHTML = '';
-    QA.forEach(({q, a}) => {
+    QA.forEach(function(item) {
       const btn = document.createElement('button');
       btn.className = 'cb-q-btn';
-      btn.textContent = q;
-      btn.onclick = () => {
-        qList.querySelectorAll('.cb-q-btn').forEach(b => b.disabled = true);
+      btn.textContent = item.q;
+      btn.addEventListener('click', function() {
+        qList.querySelectorAll('.cb-q-btn').forEach(function(b) { b.disabled = true; });
         setState('thinking');
-        setTimeout(() => {
-          addMsg(a);
+        setTimeout(function() {
+          addMsg(item.a);
           setState('happy');
-          setTimeout(() => { setState('idle'); renderQuestions(); }, 2000);
+          setTimeout(function() { setState('idle'); renderQuestions(); }, 2000);
         }, 700);
         resetSleepTimer();
-      };
+      });
       qList.appendChild(btn);
     });
   }
 
   function openPanel() {
-    if (isSleeping) { setState('waking'); setTimeout(() => { setState('idle'); }, 800); isSleeping = false; }
-    else setState('idle');
+    if (isSleeping) {
+      setState('waking');
+      setTimeout(function() { setState('idle'); }, 800);
+      isSleeping = false;
+    } else {
+      setState('idle');
+    }
     panel.classList.add('open');
     isOpen = true;
     resetSleepTimer();
@@ -1965,27 +1989,24 @@ function exportCSV() {
     resetSleepTimer();
   }
 
-  char.addEventListener('click', () => { isOpen ? closePanel() : openPanel(); });
+  char.addEventListener('click', function() { if (isOpen) closePanel(); else openPanel(); });
   closeBtn.addEventListener('click', closePanel);
 
   renderQuestions();
-  resetSleepTimer();
+
+  /* 입장 시 자동 인사 */
+  setTimeout(function() {
+    setState('notify');
+    addMsg('안녕하세요! 저는 정우T 도우미예요 😊\n시험에 대해 궁금한 게 있으면 저를 눌러보세요!');
+    panel.classList.add('open');
+    isOpen = true;
+    setTimeout(function() {
+      setState('happy');
+      setTimeout(function() { setState('idle'); }, 2000);
+    }, 800);
+    resetSleepTimer();
+  }, 1500);
 })();
 </script>
-
-<!-- 챗봇 위젯 -->
-<div id="chatbot-widget">
-  <div id="chatbot-panel">
-    <div id="chatbot-panel-header">
-      <span id="chatbot-panel-title">도우미 · 정우T</span>
-      <button id="chatbot-close" title="닫기">✕</button>
-    </div>
-    <div id="chatbot-messages">
-      <div class="cb-msg-bot">안녕하세요! 무엇이 궁금하신가요? 👇</div>
-    </div>
-    <div id="chatbot-questions"></div>
-  </div>
-  <img id="chatbot-char" src="assets/sd-jeodu/assets/jeodu-idle.apng" alt="도우미">
-</div>
 </body>
 </html>
