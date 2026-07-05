@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "name": "SD Jeodu",
+  "author": "Jeodu",
+  "version": "1.0.1",
+  "description": "SD pixel character — 8-state sprite theme",
+  "viewBox": {
+    "x": 0,
+    "y": 0,
+    "width": 237,
+    "height": 237
+  },
+  "layout": {
+    "contentBox": {
+      "x": 56,
+      "y": 0,
+      "width": 125,
+      "height": 237
+    },
+    "centerX": 118.5,
+    "baselineY": 218.04000000000002,
+    "visibleHeightRatio": 0.75,
+    "baselineBottomRatio": 0.05
+  },
+  "eyeTracking": {
+    "enabled": false
+  },
+  "states": {
+    "idle": [
+      "jeodu-idle.apng"
+    ],
+    "thinking": [
+      "jeodu-thinking.apng"
+    ],
+    "working": [
+      "jeodu-working.apng"
+    ],
+    "error": [
+      "jeodu-error.apng"
+    ],
+    "attention": [
+      "jeodu-happy.apng"
+    ],
+    "notification": [
+      "jeodu-notification.apng"
+    ],
+    "sleeping": [
+      "jeodu-sleeping.apng"
+    ],
+    "waking": [
+      "jeodu-waking.apng"
+    ]
+  },
+  "sleepSequence": {
+    "mode": "direct"
+  },
+  "miniMode": {
+    "supported": false
+  },
+  "hitBoxes": {
+    "default": {
+      "x": 68,
+      "y": 11,
+      "w": 100,
+      "h": 208
+    },
+    "sleeping": {
+      "x": 56,
+      "y": 118,
+      "w": 125,
+      "h": 109
+    }
+  },
+  "sleepingHitboxFiles": [
+    "jeodu-sleeping.apng"
+  ],
+  "objectScale": {
+    "widthRatio": 0.58,
+    "heightRatio": 0.58,
+    "imgWidthRatio": 0.6,
+    "objBottom": 0.05,
+    "imgBottom": 0.05,
+    "offsetX": 0.0,
+    "offsetY": 0.1
+  }
+}

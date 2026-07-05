@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>고대 철학 아카데미 — 학파 배정 시험</title>
+<title>철학탐구반 학파 배정 시험</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -377,6 +377,85 @@ body {
   .reveal-phrase, .reveal-card, @keyframes cardPulse { animation:none; }
   .reveal-card { opacity:1; }
 }
+
+/* ── 챗봇 위젯 ── */
+#chatbot-widget {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+#chatbot-panel {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 16px;
+  width: 272px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 14px;
+  pointer-events: all;
+  display: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#chatbot-panel.open { display: block; }
+#chatbot-messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; min-height: 24px; }
+.cb-msg-bot {
+  background: var(--surface2);
+  border-radius: 12px 12px 12px 4px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-line;
+}
+#chatbot-questions { display: flex; flex-direction: column; gap: 5px; }
+.cb-q-btn {
+  background: transparent;
+  border: 1px solid var(--surface2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 11px;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+  pointer-events: all;
+  font-family: inherit;
+}
+.cb-q-btn:hover { background: var(--surface2); }
+.cb-q-btn:disabled { opacity: 0.4; cursor: default; }
+#chatbot-char {
+  width: 88px;
+  cursor: pointer;
+  pointer-events: all;
+  user-select: none;
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
+  transition: transform 0.15s;
+  image-rendering: pixelated;
+}
+#chatbot-char:hover { transform: scale(1.06); }
+#chatbot-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+#chatbot-panel-title { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+#chatbot-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  pointer-events: all;
+}
 </style>
 </head>
 <body>
@@ -384,8 +463,8 @@ body {
 <!-- ══════════════ 시작 화면 ══════════════ -->
 <section id="screen-start" class="screen active">
   <div class="academy-title">
-    <h1>고대 철학 아카데미<br>학파 배정 시험</h1>
-    <p class="subtitle">나는 어떤 철학자의 후예인가?</p>
+    <h1>철학탐구반<br>학파 배정 시험</h1>
+    <p class="subtitle">나는 어떤 철학자의 후예일까? made by 정우T</p>
   </div>
 
   <div class="intro-text">
@@ -698,7 +777,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:772653970483:web:6a6094587ed890706f5f46",
 };
 
-const TEACHER_PASSWORD = "phil2025"; /* ← 원하는 암호로 변경 */
+const TEACHER_PASSWORD = "jeodu"; /* ← 원하는 암호로 변경 */
 /* ▲▲▲  설정 끝  ▲▲▲ */
 
 /* ── Firebase 런타임 상태 ── */
@@ -1802,6 +1881,111 @@ function exportCSV() {
   renderResult(preset.scores, preset.school, state.classId, isBorderline);
   showScreen('screen-result');
 })();
+
+/* ── 챗봇 위젯 ── */
+(function initChatbot() {
+  const BASE = 'assets/sd-jeodu/assets/';
+  const IMGS = {
+    idle:     BASE + 'jeodu-idle.apng',
+    thinking: BASE + 'jeodu-thinking.apng',
+    happy:    BASE + 'jeodu-happy.apng',
+    sleeping: BASE + 'jeodu-sleeping.apng',
+    waking:   BASE + 'jeodu-waking.apng',
+  };
+
+  const QA = [
+    { q: '시험은 어떻게 하나요?',
+      a: '10개의 철학적 질문에 답하면 4개 학파 중 하나로 배정됩니다. 각 문항에서 가장 끌리는 답을 선택하세요!' },
+    { q: '4개 학파가 뭔가요?',
+      a: '⚖️ 소피스트: 현실을 꿰뚫는 논변가\n🔦 소크라테스: 진리를 캐묻는 탐구자\n🖌️ 유가: 배움으로 사람을 이루는 자\n🌊 도가: 물처럼 흐르는 자' },
+    { q: '결과 코드는 뭔가요?',
+      a: '인터넷 연결이 없거나 제출이 실패했을 때 쓰는 코드예요. 예: SO+8-6\n선생님께 이 코드를 알려주시면 됩니다.' },
+    { q: '다시 검사할 수 있나요?',
+      a: '결과 화면 맨 아래의 [다시 하기] 버튼을 누르면 처음부터 다시 할 수 있어요.' },
+    { q: '반은 어떻게 선택하나요?',
+      a: '시작 화면에서 반을 선택한 뒤 이름을 입력하고 [시작]을 누르세요. QR코드로 접속하면 반이 자동으로 지정됩니다.' },
+  ];
+
+  const widget = document.getElementById('chatbot-widget');
+  const char   = document.getElementById('chatbot-char');
+  const panel  = document.getElementById('chatbot-panel');
+  const msgs   = document.getElementById('chatbot-messages');
+  const qList  = document.getElementById('chatbot-questions');
+  const closeBtn = document.getElementById('chatbot-close');
+
+  let sleepTimer, isOpen = false, isSleeping = false;
+
+  function setState(s) { char.src = IMGS[s] || IMGS.idle; }
+
+  function resetSleepTimer() {
+    clearTimeout(sleepTimer);
+    sleepTimer = setTimeout(() => { setState('sleeping'); isSleeping = true; }, 25000);
+  }
+
+  function addMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'cb-msg-bot';
+    div.textContent = text;
+    msgs.appendChild(div);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  function renderQuestions() {
+    qList.innerHTML = '';
+    QA.forEach(({q, a}) => {
+      const btn = document.createElement('button');
+      btn.className = 'cb-q-btn';
+      btn.textContent = q;
+      btn.onclick = () => {
+        qList.querySelectorAll('.cb-q-btn').forEach(b => b.disabled = true);
+        setState('thinking');
+        setTimeout(() => {
+          addMsg(a);
+          setState('happy');
+          setTimeout(() => { setState('idle'); renderQuestions(); }, 2000);
+        }, 700);
+        resetSleepTimer();
+      };
+      qList.appendChild(btn);
+    });
+  }
+
+  function openPanel() {
+    if (isSleeping) { setState('waking'); setTimeout(() => { setState('idle'); }, 800); isSleeping = false; }
+    else setState('idle');
+    panel.classList.add('open');
+    isOpen = true;
+    resetSleepTimer();
+  }
+
+  function closePanel() {
+    panel.classList.remove('open');
+    isOpen = false;
+    setState('idle');
+    resetSleepTimer();
+  }
+
+  char.addEventListener('click', () => { isOpen ? closePanel() : openPanel(); });
+  closeBtn.addEventListener('click', closePanel);
+
+  renderQuestions();
+  resetSleepTimer();
+})();
 </script>
+
+<!-- 챗봇 위젯 -->
+<div id="chatbot-widget">
+  <div id="chatbot-panel">
+    <div id="chatbot-panel-header">
+      <span id="chatbot-panel-title">도우미 · 정우T</span>
+      <button id="chatbot-close" title="닫기">✕</button>
+    </div>
+    <div id="chatbot-messages">
+      <div class="cb-msg-bot">안녕하세요! 무엇이 궁금하신가요? 👇</div>
+    </div>
+    <div id="chatbot-questions"></div>
+  </div>
+  <img id="chatbot-char" src="assets/sd-jeodu/assets/jeodu-idle.apng" alt="도우미">
+</div>
 </body>
 </html>
