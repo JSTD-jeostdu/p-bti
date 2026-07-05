@@ -212,7 +212,21 @@ body {
 .reveal-sub.visible { opacity:1; }
 
 /* ── 결과 화면 ── */
-#screen-result { padding-top:32px; gap:20px; }
+#screen-result { padding-top:32px; gap:20px; position:relative; }
+
+#result-bg {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.6s ease, background-image 0.1s;
+}
+#result-bg.visible { opacity: 0.18; }
+#screen-result > *:not(#result-bg) { position: relative; z-index: 1; }
 
 .result-header {
   border-radius:16px; padding:32px 20px 24px;
@@ -591,6 +605,8 @@ body {
 
 <!-- ══════════════ 결과 화면 ══════════════ -->
 <section id="screen-result" class="screen">
+
+  <div id="result-bg"></div>
 
   <div class="result-header" id="result-header" data-school="">
     <div class="result-emblem-svg" id="result-emblem-svg"></div>
@@ -1191,6 +1207,9 @@ function showScreen(id) {
   });
   const target = document.getElementById(id);
   target.classList.add('active');
+  /* 결과 화면이 아닐 때 배경 숨김 */
+  const bgEl = document.getElementById('result-bg');
+  if (bgEl) bgEl.classList.toggle('visible', id === 'screen-result');
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1360,8 +1379,23 @@ function startReveal(schoolId, scores, classId, isBorderline) {
 /* ════════════════════════════════════════
    11. 결과 렌더링
 ════════════════════════════════════════ */
+const RESULT_BG_IMAGES = {
+  sophist:   'assets/결과화면/소피스트.png',
+  socrates:  'assets/결과화면/소크라테스.png',
+  confucian: 'assets/결과화면/유가.png',
+  daoist:    'assets/결과화면/도가.png',
+};
+
 function renderResult(scores, schoolId, classId, isBorderline=false) {
   const s = SCHOOLS[schoolId];
+
+  /* 학파별 배경 이미지 */
+  const bgEl = document.getElementById('result-bg');
+  const bgSrc = RESULT_BG_IMAGES[schoolId];
+  if (bgEl && bgSrc) {
+    bgEl.style.backgroundImage = `url('${bgSrc}')`;
+    bgEl.classList.add('visible');
+  }
 
   /* 헤더 */
   const header = document.getElementById('result-header');
