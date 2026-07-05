@@ -311,6 +311,69 @@ body {
 
 .restart-note { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:-8px; }
 
+/* ── 다른 학파 확인하기 모달 ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(6,5,12,0.82);
+  align-items: center; justify-content: center;
+  padding: 24px 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal-panel {
+  background: var(--surface); border-radius: 18px;
+  padding: 20px; width: 100%; max-width: 420px;
+  border: 1px solid #3A3850;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.modal-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.modal-close {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 1.1rem; cursor: pointer; line-height: 1; padding: 4px;
+}
+.modal-close:hover { color: var(--text); }
+
+.schools-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.school-card-btn {
+  position: relative; aspect-ratio: 1; border-radius: 14px;
+  border: 2px solid transparent; overflow: hidden; cursor: pointer;
+  background-size: cover; background-position: center;
+  transition: transform var(--ease), border-color var(--ease);
+}
+.school-card-btn:active { transform: scale(0.96); }
+.school-card-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0) 55%);
+}
+.school-card-label {
+  position: absolute; left: 0; right: 0; bottom: 8px; z-index: 1;
+  text-align: center; font-size: 0.82rem; font-weight: 700; color: #fff;
+}
+.school-card-mine {
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  font-size: 0.65rem; font-weight: 700; color: #0F0E17;
+  background: #fff; border-radius: 999px; padding: 2px 8px;
+}
+
+.lightbox-panel {
+  position: relative; width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.lightbox-panel .modal-close {
+  position: absolute; top: -36px; right: 0; color: #fff; font-size: 1.4rem;
+}
+.lightbox-img {
+  width: 100%; max-height: 60vh; object-fit: contain;
+  border-radius: 16px; border: 2px solid #3A3850;
+  background: var(--surface2);
+}
+.lightbox-info { text-align: center; }
+.lightbox-name { font-size: 1.1rem; font-weight: 800; }
+.lightbox-motto { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
+
 /* 토스트 */
 .toast {
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
@@ -671,6 +734,8 @@ body {
     <button class="btn btn-secondary" id="btn-copy">결과 복사</button>
   </div>
 
+  <button class="btn btn-ghost" id="btn-other-schools">🔍 다른 학파 확인하기</button>
+
   <div class="result-code-section">
     <div class="result-code-label">결과 코드 (오프라인 폴백용)</div>
     <div class="result-code-box" id="result-code"></div>
@@ -687,6 +752,28 @@ body {
   <button class="btn btn-primary" id="restart-btn">↺ 다시 하기</button>
   <p class="restart-note">재검사 결과는 기록에 별도 제출되지 않습니다.</p>
 </section>
+
+<!-- ══════════════ 다른 학파 확인하기 모달 ══════════════ -->
+<div class="modal-overlay" id="schools-modal">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <span class="modal-title">4개 학파 살펴보기</span>
+      <button class="modal-close" id="schools-modal-close" title="닫기">✕</button>
+    </div>
+    <div class="schools-modal-grid" id="schools-modal-grid"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="school-lightbox">
+  <div class="lightbox-panel">
+    <button class="modal-close" id="lightbox-close" title="닫기">✕</button>
+    <img class="lightbox-img" id="lightbox-img" alt="">
+    <div class="lightbox-info">
+      <div class="lightbox-name" id="lightbox-name"></div>
+      <div class="lightbox-motto" id="lightbox-motto"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════ 교사 대시보드 (?mode=teacher) ══════════════ -->
 <section id="screen-teacher" class="screen">
@@ -1636,6 +1723,69 @@ function drawResultCanvas(scores, schoolId, name) {
 ════════════════════════════════════════ */
 document.getElementById('restart-btn').addEventListener('click', ()=>{
   showScreen('screen-start');
+});
+
+/* ════════════════════════════════════════
+   14. 다른 학파 확인하기
+════════════════════════════════════════ */
+const SCHOOL_ORDER = ['sophist','socrates','confucian','daoist'];
+
+const schoolsModal   = document.getElementById('schools-modal');
+const schoolsGrid    = document.getElementById('schools-modal-grid');
+const lightbox       = document.getElementById('school-lightbox');
+const lightboxImg    = document.getElementById('lightbox-img');
+const lightboxName   = document.getElementById('lightbox-name');
+const lightboxMotto  = document.getElementById('lightbox-motto');
+
+function openSchoolsModal() {
+  const mySchool = document.getElementById('result-header').dataset.school;
+  schoolsGrid.innerHTML = '';
+  SCHOOL_ORDER.forEach(id => {
+    const s = SCHOOLS[id];
+    const btn = document.createElement('button');
+    btn.className = 'school-card-btn';
+    btn.style.backgroundImage = `url('${RESULT_BG_IMAGES[id]}')`;
+    btn.style.borderColor = s.color;
+    btn.innerHTML = `
+      ${id === mySchool ? '<span class="school-card-mine">나의 학파</span>' : ''}
+      <span class="school-card-label">${s.name}</span>
+    `;
+    btn.addEventListener('click', () => openLightbox(id));
+    schoolsGrid.appendChild(btn);
+  });
+  schoolsModal.classList.add('open');
+}
+
+function closeSchoolsModal() { schoolsModal.classList.remove('open'); }
+
+function openLightbox(schoolId) {
+  const s = SCHOOLS[schoolId];
+  lightboxImg.src = RESULT_BG_IMAGES[schoolId];
+  lightboxImg.alt = s.name;
+  lightboxImg.style.borderColor = s.color;
+  lightboxName.textContent = s.name;
+  lightboxName.style.color = s.color;
+  lightboxMotto.textContent = `"${s.motto}"`;
+  schoolsModal.classList.remove('open');
+  lightbox.classList.add('open');
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  schoolsModal.classList.add('open');
+}
+
+document.getElementById('btn-other-schools').addEventListener('click', openSchoolsModal);
+document.getElementById('schools-modal-close').addEventListener('click', closeSchoolsModal);
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+
+schoolsModal.addEventListener('click', e => { if (e.target === schoolsModal) closeSchoolsModal(); });
+lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (lightbox.classList.contains('open')) closeLightbox();
+  else if (schoolsModal.classList.contains('open')) closeSchoolsModal();
 });
 
 /* ════════════════════════════════════════

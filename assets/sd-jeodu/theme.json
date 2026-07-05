@@ -3,7 +3,7 @@
   "name": "SD Jeodu",
   "author": "Jeodu",
   "version": "1.0.1",
-  "description": "SD pixel character — 8-state sprite theme",
+  "description": "SD pixel character — 8-state sprite theme (wizard jeodu)",
   "viewBox": {
     "x": 0,
     "y": 0,
@@ -12,9 +12,9 @@
   },
   "layout": {
     "contentBox": {
-      "x": 56,
+      "x": 43,
       "y": 0,
-      "width": 125,
+      "width": 152,
       "height": 237
     },
     "centerX": 118.5,
@@ -59,16 +59,16 @@
   },
   "hitBoxes": {
     "default": {
-      "x": 68,
+      "x": 48,
       "y": 11,
-      "w": 100,
+      "w": 141,
       "h": 208
     },
     "sleeping": {
-      "x": 56,
-      "y": 118,
-      "w": 125,
-      "h": 109
+      "x": 43,
+      "y": 96,
+      "w": 151,
+      "h": 141
     }
   },
   "sleepingHitboxFiles": [
